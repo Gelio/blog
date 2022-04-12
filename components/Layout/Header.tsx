@@ -2,7 +2,10 @@ import styled from "@emotion/styled";
 import Image from "next/image";
 import Link from "next/link";
 import { githubProfileLink } from "../../consts";
-import { responsiveContainer } from "../../styles/layout";
+import {
+  responsiveContainer,
+  responsiveContainerInlinePadding,
+} from "../../styles/layout";
 import { rem, spacing } from "../../styles/theme";
 
 export const Header = () => {
@@ -31,13 +34,16 @@ export const Header = () => {
   );
 };
 
-const StyledHeader = styled("header")(responsiveContainer, {
-  display: "flex",
-  justifyContent: "space-between",
-  alignItems: "center",
-  paddingInline: rem(spacing(1)),
-  height: rem(40),
-});
+const StyledHeader = styled("header")(
+  responsiveContainer,
+  responsiveContainerInlinePadding,
+  {
+    display: "flex",
+    justifyContent: "space-between",
+    alignItems: "center",
+    height: rem(40),
+  }
+);
 
 const StyledHeaderLink = styled("a")(({ theme }) => ({
   color: theme.color.primary.main,

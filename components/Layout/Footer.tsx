@@ -1,5 +1,8 @@
 import styled from "@emotion/styled";
-import { responsiveContainer } from "../../styles/layout";
+import {
+  responsiveContainer,
+  responsiveContainerInlinePadding,
+} from "../../styles/layout";
 import { rem, spacing } from "../../styles/theme";
 
 export const Footer = () => (
@@ -8,13 +11,16 @@ export const Footer = () => (
   </StyledFooterText>
 );
 
-const StyledFooterText = styled("footer")(responsiveContainer, ({ theme }) => ({
-  paddingInlineStart: spacing(1),
-  color: theme.color.text.desaturated,
-  fontSize: rem(10),
-  paddingBlockEnd: spacing(1),
-  height: rem(spacing(4)),
+const StyledFooterText = styled("footer")(
+  responsiveContainer,
+  responsiveContainerInlinePadding,
+  ({ theme }) => ({
+    color: theme.color.text.desaturated,
+    fontSize: rem(10),
+    paddingBlockEnd: rem(spacing(1)),
+    height: rem(spacing(4)),
 
-  display: "flex",
-  alignItems: "end",
-}));
+    display: "flex",
+    alignItems: "end",
+  })
+);
