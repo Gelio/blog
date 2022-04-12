@@ -5,6 +5,7 @@ export const blogTheme = {
     },
     text: {
       main: "#2B2118",
+      desaturated: "#777777",
     },
     background: {
       main: "#E7F3F6",

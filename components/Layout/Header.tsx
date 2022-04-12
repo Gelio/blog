@@ -31,11 +31,10 @@ export const Header = () => {
   );
 };
 
-const StyledHeader = styled("header")({
+const StyledHeader = styled("header")(responsiveContainer, {
   display: "flex",
   justifyContent: "space-between",
   alignItems: "center",
-  "&": responsiveContainer,
   paddingInline: rem(spacing(1)),
   height: rem(40),
 });
