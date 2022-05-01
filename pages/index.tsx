@@ -125,7 +125,7 @@ const Home = () => {
 };
 
 const StyledArticleContainer = styled("article")({
-  marginBlockStart: rem(spacing(3)),
+  marginBlockStart: rem(spacing(2)),
 });
 
 const StyledArticleHeader = styled("div")(
@@ -138,7 +138,7 @@ const StyledArticleHeader = styled("div")(
 
 const StyledArticleTitle = styled("h1")({
   fontWeight: "normal",
-  fontSize: rem(24),
+  fontSize: rem(28),
   // NOTE: reset the default margin-block-start
   marginBlockStart: 0,
   marginBlockEnd: rem(spacing(1)),
@@ -153,7 +153,7 @@ const StyledArticleMetaContainer = styled("div")({
 
 const StyledArticleMetaItem = styled("span")(({ theme }) => ({
   color: theme.color.text.desaturated,
-  fontSize: rem(14),
+  fontSize: rem(16),
 }));
 
 const StyledTagLink = styled("a")(({ theme }) => ({

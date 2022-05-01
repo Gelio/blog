@@ -16,7 +16,7 @@ const StyledFooterText = styled("footer")(
   responsiveContainerInlinePadding,
   ({ theme }) => ({
     color: theme.color.text.desaturated,
-    fontSize: rem(10),
+    fontSize: rem(12),
     paddingBlockEnd: rem(spacing(1)),
     height: rem(spacing(4)),
 

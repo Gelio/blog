@@ -41,7 +41,8 @@ const StyledHeader = styled("header")(
     display: "flex",
     justifyContent: "space-between",
     alignItems: "center",
-    height: rem(40),
+    marginBlockStart: rem(spacing(1)),
+    paddingBlock: rem(spacing(1)),
   }
 );
 
@@ -51,10 +52,11 @@ const StyledHeaderLink = styled("a")(({ theme }) => ({
   [":hover"]: {
     textDecoration: "underline",
   },
+  fontSize: rem(20),
 }));
 
 const StyledBlogTitle = styled(StyledHeaderLink)({
-  fontSize: rem(18),
+  fontSize: rem(24),
 });
 
 const HeaderLinks = styled("nav")({
