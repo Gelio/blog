@@ -10,3 +10,7 @@ export const responsiveContainer = css({
 export const responsiveContainerInlinePadding = css({
   paddingInline: rem(spacing(2)),
 });
+
+export const pageContentMarginTop = css({
+  marginBlockStart: rem(spacing(2)),
+});

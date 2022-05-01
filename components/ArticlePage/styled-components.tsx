@@ -1,5 +1,6 @@
 import styled from "@emotion/styled";
 import {
+  pageContentMarginTop,
   responsiveContainer,
   responsiveContainerInlinePadding,
 } from "../../styles/layout";
@@ -27,6 +28,4 @@ export const StyledArticleParagraphLink = styled("a")(({ theme }) => ({
   color: theme.color.primary.main,
 }));
 
-export const StyledArticleContainer = styled("article")({
-  marginBlockStart: rem(spacing(2)),
-});
+export const StyledArticleContainer = styled("article")(pageContentMarginTop);
