@@ -6,10 +6,10 @@ import {
   StyledArticleParagraphLink,
   StyledArticleSection,
   StyledArticleSectionHeading,
-} from "../components/ArticlePage";
-import { Layout } from "../components/Layout";
+} from "../../components/ArticlePage";
+import { Layout } from "../../components/Layout";
 
-const Home = () => {
+const ArticlePage = () => {
   return (
     <Layout>
       <StyledArticleContainer>
@@ -125,4 +125,4 @@ const Home = () => {
   );
 };
 
-export default Home;
+export default ArticlePage;
