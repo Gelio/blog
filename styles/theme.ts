@@ -2,10 +2,12 @@ export const blogTheme = {
   color: {
     primary: {
       main: "#1D6891",
+      light: "#BFE0F2",
     },
     text: {
       main: "#2B2118",
       desaturated: "#777777",
+      onDarkBackground: "#ECF0F1",
     },
     background: {
       main: "#E7F3F6",
