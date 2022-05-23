@@ -11,6 +11,7 @@ import {
   headingStyle,
 } from "../../styles/typography";
 import { Layout } from "../Layout";
+import { getTopicPagePath } from "../TopicPage";
 
 export const TopicsPage = () => {
   const topics = [
@@ -33,7 +34,7 @@ export const TopicsPage = () => {
 
       <TopicsContainer>
         {topics.map((topic) => (
-          <Link href={`/topic/${topic}`} passHref key={topic}>
+          <Link href={getTopicPagePath(topic)} passHref key={topic}>
             <TopicLink>{topic}</TopicLink>
           </Link>
         ))}
