@@ -8,6 +8,7 @@ import {
 } from "../../styles/layout";
 import { rem, spacing } from "../../styles/theme";
 import { decorationOnHoverLinkStyle } from "../../styles/typography";
+import { aboutPagePath } from "../AboutPage";
 import { homePagePath } from "../HomePage";
 import { topicsPagePath } from "../TopicsPage";
 
@@ -24,7 +25,7 @@ export const Header = () => {
             <StyledHeaderLink>Topics</StyledHeaderLink>
           </Link>
 
-          <Link href="/about" passHref>
+          <Link href={aboutPagePath} passHref>
             <StyledHeaderLink>About</StyledHeaderLink>
           </Link>
         </Sublinks>
