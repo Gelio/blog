@@ -22,6 +22,7 @@ export const HomePage = () => {
           createdDate="2022-05-01"
           tagNames={["blog", "architecture", "frontend"]}
           title="Blog hosting decisions"
+          slug="blog-hosting-decisions"
           summary={
             "Lorem ipsum dolor sit amet, consectetur adipiscing elit. Pellentesque vulputate sapien vel risus sagittis, et scelerisque ex elementum. Aliquam non porttitor justo, eu bibendum tortor. Vivamus a turpis sem."
           }
@@ -32,6 +33,7 @@ export const HomePage = () => {
           createdDate="2022-05-01"
           tagNames={["blog", "architecture", "frontend"]}
           title="Blog hosting decisions"
+          slug="blog-hosting-decisions"
           summary={
             "Lorem ipsum dolor sit amet, consectetur adipiscing elit. Pellentesque vulputate sapien vel risus sagittis, et scelerisque ex elementum. Aliquam non porttitor justo, eu bibendum tortor. Vivamus a turpis sem."
           }
@@ -42,6 +44,7 @@ export const HomePage = () => {
           createdDate="2022-05-01"
           tagNames={["blog", "architecture", "frontend"]}
           title="Blog hosting decisions"
+          slug="blog-hosting-decisions"
           summary={
             "Lorem ipsum dolor sit amet, consectetur adipiscing elit. Pellentesque vulputate sapien vel risus sagittis, et scelerisque ex elementum. Aliquam non porttitor justo, eu bibendum tortor. Vivamus a turpis sem."
           }
