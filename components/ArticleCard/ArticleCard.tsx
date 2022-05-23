@@ -5,17 +5,19 @@ import { ComponentProps, ElementType, ReactNode } from "react";
 import { rem, spacing } from "../../styles/theme";
 import { articleTitleStyle } from "../../styles/typography";
 import { ArticleMeta } from "../ArticleMeta";
-import { StyledArticleParagraph } from "../ArticlePage";
+import { getArticlePagePath, StyledArticleParagraph } from "../ArticlePage";
 
 interface ArticleCardProps extends ComponentProps<typeof ArticleMeta> {
   className?: string;
   title: string;
+  slug: string;
   summary: ReactNode;
   titleAs?: ElementType;
 }
 
 export const ArticleCard = ({
   title,
+  slug,
   titleAs,
   summary,
   className,
@@ -34,7 +36,7 @@ export const ArticleCard = ({
 
     <StyledArticleCardSummary>{summary}</StyledArticleCardSummary>
 
-    <Link href="/article/abc" passHref>
+    <Link href={getArticlePagePath(slug)} passHref>
       <StyledButton>Read more</StyledButton>
     </Link>
   </StyledArticleCardContainer>

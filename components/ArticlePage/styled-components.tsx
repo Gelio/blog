@@ -5,6 +5,7 @@ import {
   responsiveContainerInlinePadding,
 } from "../../styles/layout";
 import { rem, spacing } from "../../styles/theme";
+import { headingStyle } from "../../styles/typography";
 
 export const StyledArticleSection = styled("section")(
   responsiveContainer,
@@ -16,11 +17,9 @@ export const StyledArticleParagraph = styled("p")({
   marginBlockStart: 0,
 });
 
-export const StyledArticleSectionHeading = styled("h2")({
-  fontSize: rem(20),
+export const StyledArticleSectionHeading = styled("h2")(headingStyle, {
   marginBlockStart: rem(spacing(4)),
   marginBlockEnd: rem(spacing(1)),
-  fontWeight: "normal",
 });
 
 export const StyledArticleParagraphLink = styled("a")(({ theme }) => ({

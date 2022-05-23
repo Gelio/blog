@@ -1,5 +1,6 @@
 import styled from "@emotion/styled";
 import Link from "next/link";
+import { getTopicPagePath } from "../TopicPage";
 
 interface TagsProps {
   names: string[];
@@ -18,7 +19,7 @@ export const Tags = ({ names }: TagsProps) => (
 );
 
 const Tag = ({ name }: { name: string }) => (
-  <Link href={`/topic/${name}`} passHref>
+  <Link href={getTopicPagePath(name)} passHref>
     <StyledTagLink>{name}</StyledTagLink>
   </Link>
 );
