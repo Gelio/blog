@@ -1,4 +1,5 @@
 import styled from "@emotion/styled";
+import Link from "next/link";
 import { ComponentProps, ElementType, ReactNode } from "react";
 
 import { rem, spacing } from "../../styles/theme";
@@ -33,7 +34,9 @@ export const ArticleCard = ({
 
     <StyledArticleCardSummary>{summary}</StyledArticleCardSummary>
 
-    <StyledButton>Read more</StyledButton>
+    <Link href="/article/abc" passHref>
+      <StyledButton>Read more</StyledButton>
+    </Link>
   </StyledArticleCardContainer>
 );
 
@@ -50,7 +53,7 @@ const StyledArticleCardSummary = styled(StyledArticleParagraph)({
   margin: 0,
 });
 
-const StyledButton = styled("button")(({ theme }) => ({
+const StyledButton = styled("a")(({ theme }) => ({
   // NOTE: instance-specific
   marginBlockStart: rem(spacing(1)),
 
@@ -58,6 +61,7 @@ const StyledButton = styled("button")(({ theme }) => ({
   backgroundColor: theme.color.primary.main,
   color: theme.color.text.onDarkBackground,
   textTransform: "uppercase",
+  textDecoration: "none",
   paddingBlock: rem(spacing(1)),
   paddingInline: rem(spacing(2)),
   transition: "background-color ease-in-out 200ms",
