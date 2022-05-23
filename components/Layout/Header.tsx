@@ -7,6 +7,7 @@ import {
   responsiveContainerInlinePadding,
 } from "../../styles/layout";
 import { rem, spacing } from "../../styles/theme";
+import { decorationOnHoverLinkStyle } from "../../styles/typography";
 
 export const Header = () => {
   return (
@@ -46,14 +47,13 @@ const StyledHeader = styled("header")(
   }
 );
 
-const StyledHeaderLink = styled("a")(({ theme }) => ({
-  color: theme.color.primary.main,
-  textDecoration: "none",
-  [":hover"]: {
-    textDecoration: "underline",
-  },
-  fontSize: rem(20),
-}));
+const StyledHeaderLink = styled("a")(
+  decorationOnHoverLinkStyle,
+  ({ theme }) => ({
+    color: theme.color.primary.main,
+    fontSize: rem(20),
+  })
+);
 
 const StyledBlogTitle = styled(StyledHeaderLink)({
   fontSize: rem(24),

@@ -11,3 +11,10 @@ export const headingStyle = css({
   fontSize: rem(20),
   fontWeight: "normal",
 });
+
+export const decorationOnHoverLinkStyle = css({
+  textDecoration: "none",
+  [":hover"]: {
+    textDecoration: "underline",
+  },
+});
