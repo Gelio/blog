@@ -8,6 +8,7 @@ import {
 } from "../../styles/layout";
 import { rem, spacing } from "../../styles/theme";
 import { decorationOnHoverLinkStyle } from "../../styles/typography";
+import { topicsPagePath } from "../TopicsPage";
 
 export const Header = () => {
   return (
@@ -18,7 +19,7 @@ export const Header = () => {
         </Link>
 
         <Sublinks>
-          <Link href="/topics" passHref>
+          <Link href={topicsPagePath} passHref>
             <StyledHeaderLink>Topics</StyledHeaderLink>
           </Link>
 
