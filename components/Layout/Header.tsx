@@ -8,13 +8,14 @@ import {
 } from "../../styles/layout";
 import { rem, spacing } from "../../styles/theme";
 import { decorationOnHoverLinkStyle } from "../../styles/typography";
+import { homePagePath } from "../HomePage";
 import { topicsPagePath } from "../TopicsPage";
 
 export const Header = () => {
   return (
     <StyledHeader>
       <HeaderLinks>
-        <Link href="/" passHref>
+        <Link href={homePagePath} passHref>
           <StyledBlogTitle>Greg Rozdzialik</StyledBlogTitle>
         </Link>
 
