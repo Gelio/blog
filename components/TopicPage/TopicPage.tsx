@@ -1,0 +1,120 @@
+import styled from "@emotion/styled";
+import { useRouter } from "next/router";
+import {
+  pageContentMarginTop,
+  responsiveContainer,
+  responsiveContainerInlinePadding,
+} from "../../styles/layout";
+import { rem, spacing } from "../../styles/theme";
+import { headingStyle } from "../../styles/typography";
+import { ArticleCard } from "../ArticleCard";
+import { Button } from "../Button";
+import { Layout } from "../Layout";
+
+export const TopicPage = () => {
+  const { query } = useRouter();
+  const topicName = query.name as string;
+
+  return (
+    <Layout>
+      <StyledMainContent>
+        <StyledPageTitle>Articles about {topicName}</StyledPageTitle>
+
+        <StyledTopicDescription>
+          Architecture is important to consider in your applications. Lorem
+          ipsum dolor sit amet, consectetur adipiscing elit. Pellentesque
+          vulputate sapien vel risus sagittis, et scelerisque ex elementum.
+          Aliquam non porttitor justo, eu bibendum tortor. Vivamus a turpis sem.
+        </StyledTopicDescription>
+      </StyledMainContent>
+
+      <StyledArticleCardsContainer>
+        <ArticleCard
+          readingDuration="14 minutes"
+          createdDate="2022-05-01"
+          tagNames={["blog", "architecture", "frontend"]}
+          title="Blog hosting decisions"
+          slug="blog-hosting-decisions"
+          summary={
+            "Lorem ipsum dolor sit amet, consectetur adipiscing elit. Pellentesque vulputate sapien vel risus sagittis, et scelerisque ex elementum. Aliquam non porttitor justo, eu bibendum tortor. Vivamus a turpis sem."
+          }
+        />
+
+        <ArticleCard
+          readingDuration="14 minutes"
+          createdDate="2022-05-01"
+          tagNames={["blog", "architecture", "frontend"]}
+          title="Blog hosting decisions"
+          slug="blog-hosting-decisions"
+          summary={
+            "Lorem ipsum dolor sit amet, consectetur adipiscing elit. Pellentesque vulputate sapien vel risus sagittis, et scelerisque ex elementum. Aliquam non porttitor justo, eu bibendum tortor. Vivamus a turpis sem."
+          }
+        />
+
+        <ArticleCard
+          readingDuration="14 minutes"
+          createdDate="2022-05-01"
+          tagNames={["blog", "architecture", "frontend"]}
+          title="Blog hosting decisions"
+          slug="blog-hosting-decisions"
+          summary={
+            "Lorem ipsum dolor sit amet, consectetur adipiscing elit. Pellentesque vulputate sapien vel risus sagittis, et scelerisque ex elementum. Aliquam non porttitor justo, eu bibendum tortor. Vivamus a turpis sem."
+          }
+        />
+      </StyledArticleCardsContainer>
+
+      <StyledPaginationContainer>
+        <LeftButtonContainer>
+          <NavigationButton>Older</NavigationButton>
+        </LeftButtonContainer>
+
+        {/* NOTE: filler between the buttons */}
+        <div />
+
+        <NavigationButton>Newer</NavigationButton>
+      </StyledPaginationContainer>
+    </Layout>
+  );
+};
+
+const StyledMainContent = styled("main")(
+  responsiveContainer,
+  responsiveContainerInlinePadding,
+  pageContentMarginTop
+);
+
+const StyledPageTitle = styled("h1")(headingStyle, {
+  marginBlock: 0,
+});
+
+const StyledTopicDescription = styled("p")({
+  marginBlockStart: rem(spacing(1)),
+  marginBlockEnd: rem(spacing(2)),
+});
+
+const StyledArticleCardsContainer = styled("div")(responsiveContainer, {
+  display: "flex",
+  flexDirection: "column",
+  gap: rem(spacing(2)),
+});
+
+const maxButtonsGap = rem(200);
+const StyledPaginationContainer = styled("div")(responsiveContainer, {
+  marginBlock: rem(spacing(3)),
+  paddingInline: rem(spacing(2)),
+
+  display: "grid",
+  // NOTE: the gap must shrink if there is not enough space.
+  // Using `column-gap` is not possible, because it does not allow using
+  // `minmax`
+  gridTemplateColumns: `1fr minmax(min-content, ${maxButtonsGap}) 1fr`,
+});
+
+const NavigationButton = styled(Button)({
+  marginBlockStart: 0,
+});
+
+const LeftButtonContainer = styled("div")({
+  display: "flex",
+  justifyContent: "flex-end",
+});

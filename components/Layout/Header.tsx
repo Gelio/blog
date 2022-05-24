@@ -8,9 +8,9 @@ import {
 } from "../../styles/layout";
 import { rem, spacing } from "../../styles/theme";
 import { decorationOnHoverLinkStyle } from "../../styles/typography";
-import { aboutPagePath } from "../AboutPage";
-import { homePagePath } from "../HomePage";
-import { topicsPagePath } from "../TopicsPage";
+import { aboutPagePath } from "../AboutPage/route";
+import { homePagePath } from "../HomePage/route";
+import { topicsPagePath } from "../TopicsPage/route";
 
 export const Header = () => {
   return (
