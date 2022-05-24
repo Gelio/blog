@@ -7,6 +7,7 @@ import { articleTitleStyle } from "../../styles/typography";
 import { ArticleMeta } from "../ArticleMeta";
 import { getArticlePagePath } from "../ArticlePage/route";
 import { StyledArticleParagraph } from "../ArticlePage/styled-components";
+import { Button } from "../Button";
 
 interface ArticleCardProps extends ComponentProps<typeof ArticleMeta> {
   className?: string;
@@ -38,7 +39,7 @@ export const ArticleCard = ({
     <StyledArticleCardSummary>{summary}</StyledArticleCardSummary>
 
     <Link href={getArticlePagePath(slug)} passHref>
-      <StyledButton>Read more</StyledButton>
+      <Button>Read more</Button>
     </Link>
   </StyledArticleCardContainer>
 );
@@ -55,28 +56,5 @@ const StyledArticleCardContainer = styled("div")(({ theme }) => ({
 const StyledArticleCardSummary = styled(StyledArticleParagraph)({
   margin: 0,
 });
-
-const StyledButton = styled("a")(({ theme }) => ({
-  // NOTE: instance-specific
-  marginBlockStart: rem(spacing(1)),
-
-  borderRadius: rem(spacing(0.5)),
-  backgroundColor: theme.color.primary.main,
-  color: theme.color.text.onDarkBackground,
-  textTransform: "uppercase",
-  textDecoration: "none",
-  paddingBlock: rem(spacing(1)),
-  paddingInline: rem(spacing(2)),
-  transition: "background-color ease-in-out 200ms",
-  fontSize: rem(14),
-  lineHeight: 1.5,
-  width: "fit-content",
-
-  border: "none",
-
-  ":hover": {
-    backgroundColor: "#288FC8",
-  },
-}));
 
 const StyledArticleCardTitle = styled("h2")(articleTitleStyle, { margin: 0 });
