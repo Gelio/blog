@@ -8,6 +8,7 @@ import {
 import { rem, spacing } from "../../styles/theme";
 import { headingStyle } from "../../styles/typography";
 import { ArticleCard } from "../ArticleCard";
+import { Button } from "../Button";
 import { Layout } from "../Layout";
 
 export const TopicPage = () => {
@@ -62,7 +63,16 @@ export const TopicPage = () => {
         />
       </StyledArticleCardsContainer>
 
-      {/* TODO: Newer/Older buttons */}
+      <StyledPaginationContainer>
+        <LeftButtonContainer>
+          <NavigationButton>Older</NavigationButton>
+        </LeftButtonContainer>
+
+        {/* NOTE: filler between the buttons */}
+        <div />
+
+        <NavigationButton>Newer</NavigationButton>
+      </StyledPaginationContainer>
     </Layout>
   );
 };
@@ -86,4 +96,25 @@ const StyledArticleCardsContainer = styled("div")(responsiveContainer, {
   display: "flex",
   flexDirection: "column",
   gap: rem(spacing(2)),
+});
+
+const maxButtonsGap = rem(200);
+const StyledPaginationContainer = styled("div")(responsiveContainer, {
+  marginBlock: rem(spacing(3)),
+  paddingInline: rem(spacing(2)),
+
+  display: "grid",
+  // NOTE: the gap must shrink if there is not enough space.
+  // Using `column-gap` is not possible, because it does not allow using
+  // `minmax`
+  gridTemplateColumns: `1fr minmax(min-content, ${maxButtonsGap}) 1fr`,
+});
+
+const NavigationButton = styled(Button)({
+  marginBlockStart: 0,
+});
+
+const LeftButtonContainer = styled("div")({
+  display: "flex",
+  justifyContent: "flex-end",
 });
