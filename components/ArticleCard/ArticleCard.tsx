@@ -5,7 +5,8 @@ import { ComponentProps, ElementType, ReactNode } from "react";
 import { rem, spacing } from "../../styles/theme";
 import { articleTitleStyle } from "../../styles/typography";
 import { ArticleMeta } from "../ArticleMeta";
-import { getArticlePagePath, StyledArticleParagraph } from "../ArticlePage";
+import { getArticlePagePath } from "../ArticlePage/route";
+import { StyledArticleParagraph } from "../ArticlePage/styled-components";
 
 interface ArticleCardProps extends ComponentProps<typeof ArticleMeta> {
   className?: string;
