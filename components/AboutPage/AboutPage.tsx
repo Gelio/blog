@@ -17,20 +17,21 @@ export const AboutPage = () => {
   return (
     <Layout>
       <StyledMainContent>
-        <StyledPageHeading>About me</StyledPageHeading>
+        <StyledAlwaysLeftColumn>
+          <StyledPageHeading>About me</StyledPageHeading>
 
-        <StyledAboutParagraph>
-          My name is Grzegorz Rozdzialik (pronounced “Rossgialik”), but I go by{" "}
-          <StyledAccent>Greg</StyledAccent>. I am a Senior Software Engineer
-          working at{" "}
-          <StyledArticleParagraphLink href="https://www.splitgraph.com/">
-            Splitgraph
-          </StyledArticleParagraphLink>
-          .
-        </StyledAboutParagraph>
+          <StyledAboutParagraph>
+            My name is Grzegorz Rozdzialik (pronounced “Rossgialik”), but I go
+            by <StyledAccent>Greg</StyledAccent>. I am a Senior Software
+            Engineer working at{" "}
+            <StyledArticleParagraphLink href="https://www.splitgraph.com/">
+              Splitgraph
+            </StyledArticleParagraphLink>
+            .
+          </StyledAboutParagraph>
+        </StyledAlwaysLeftColumn>
 
         <StyledHeroImageContainer>
-          {/* TODO: change the layout on desktop */}
           <StyledHeroImage
             src="/images/me.jpg"
             alt="A picture of me in Vienna"
@@ -40,33 +41,54 @@ export const AboutPage = () => {
           />
         </StyledHeroImageContainer>
 
-        <StyledAboutParagraph>
-          My primary interests are frontend-related, but recently I found myself
-          pulled towards Rust more often.
-        </StyledAboutParagraph>
+        <StyledAlwaysLeftColumn>
+          <StyledAboutParagraph>
+            My primary interests are frontend-related, but recently I found
+            myself pulled towards Rust more often.
+          </StyledAboutParagraph>
 
-        <StyledAboutParagraph>
-          Outside of work, I enjoy weightlifting, reading books, and
-          snowboarding.
-        </StyledAboutParagraph>
+          <StyledAboutParagraph>
+            Outside of work, I enjoy weightlifting, reading books, and
+            snowboarding.
+          </StyledAboutParagraph>
 
-        <StyledAboutParagraph>
-          You can find more of my work on{" "}
-          <StyledArticleParagraphLink href="https://github.com/Gelio">
-            my GitHub profile
-          </StyledArticleParagraphLink>
-          .
-        </StyledAboutParagraph>
+          <StyledAboutParagraph>
+            You can find more of my work on{" "}
+            <StyledArticleParagraphLink href="https://github.com/Gelio">
+              my GitHub profile
+            </StyledArticleParagraphLink>
+            .
+          </StyledAboutParagraph>
+        </StyledAlwaysLeftColumn>
       </StyledMainContent>
     </Layout>
   );
 };
 
+const mediaQueries = {
+  portraitPhotoMobile: "@media (max-width: 500px)",
+  desktop: `@media (min-width: ${containerWidth})`,
+};
+
 const StyledMainContent = styled("main")(
   pageContentMarginTop,
   responsiveContainer,
-  responsiveContainerInlinePadding
+  responsiveContainerInlinePadding,
+  {
+    display: "grid",
+    columnGap: rem(spacing(2)),
+    [mediaQueries.desktop]: {
+      gridTemplateColumns: "repeat(2, 1fr)",
+      // NOTE: keep the second row of text close to the first row,
+      // so the paragraphs appear as a single column.
+      gridTemplateRows: "min-content 1fr",
+    },
+  }
 );
+
+const StyledAlwaysLeftColumn = styled("div")({
+  gridColumn: 1,
+});
 
 const StyledPageHeading = styled("h2")(headingStyle);
 
@@ -77,11 +99,6 @@ const StyledAccent = styled("span")(({ theme }) => ({
 const StyledAboutParagraph = styled(StyledArticleParagraph)({
   marginBlockEnd: rem(spacing(1)),
 });
-
-const mediaQueries = {
-  portraitPhotoMobile: "@media (max-width: 500px)",
-  desktop: `@media (min-width: ${containerWidth})`,
-};
 
 const portraitPhotoStyles = {
   container: {
@@ -110,9 +127,14 @@ const StyledHeroImageContainer = styled("div")({
   boxShadow: `${rem(4)} ${rem(4)} ${rem(4)} rgba(0, 0, 0, 0.25)`,
   overflow: "hidden",
   marginBlockEnd: rem(spacing(2)),
+  gridColumn: 1,
 
   [mediaQueries.portraitPhotoMobile]: portraitPhotoStyles.container,
-  [mediaQueries.desktop]: portraitPhotoStyles.container,
+  [mediaQueries.desktop]: {
+    ...portraitPhotoStyles.container,
+    gridColumn: 2,
+    gridRow: "1 / 3",
+  },
 });
 
 const StyledHeroImage = styled(Image)({
