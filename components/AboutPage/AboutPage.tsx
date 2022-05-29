@@ -5,7 +5,7 @@ import {
   responsiveContainer,
   responsiveContainerInlinePadding,
 } from "../../styles/layout";
-import { rem, spacing } from "../../styles/theme";
+import { containerWidth, rem, spacing } from "../../styles/theme";
 import { headingStyle } from "../../styles/typography";
 import {
   StyledArticleParagraph,
@@ -30,9 +30,8 @@ export const AboutPage = () => {
         </StyledAboutParagraph>
 
         <StyledHeroImageContainer>
-          {/* TODO: clip the image on both mobile and desktop */}
           {/* TODO: change the layout on desktop */}
-          <Image
+          <StyledHeroImage
             src="/images/me.jpg"
             alt="A picture of me in Vienna"
             width={4000}
@@ -79,6 +78,30 @@ const StyledAboutParagraph = styled(StyledArticleParagraph)({
   marginBlockEnd: rem(spacing(1)),
 });
 
+const mediaQueries = {
+  portraitPhotoMobile: "@media (max-width: 500px)",
+  desktop: `@media (min-width: ${containerWidth})`,
+};
+
+const portraitPhotoStyles = {
+  container: {
+    "> span": {
+      // NOTE: need to override the style applied directly to the element using
+      // the `style` attribute
+      overflow: "visible !important",
+    },
+
+    "::after": {
+      display: "block",
+      content: "''",
+      paddingBlockStart: "56.5%",
+    },
+  },
+  image: {
+    transform: `scale(2.15) translate(-5%, 21%)`,
+  },
+};
+
 // NOTE: next/image is comprised of many elements but only the innermost `img`
 // can be styled. This results in clipped box-shadow of the image. Thus, those
 // properties must be applied through a container.
@@ -87,4 +110,14 @@ const StyledHeroImageContainer = styled("div")({
   boxShadow: `${rem(4)} ${rem(4)} ${rem(4)} rgba(0, 0, 0, 0.25)`,
   overflow: "hidden",
   marginBlockEnd: rem(spacing(2)),
+
+  [mediaQueries.portraitPhotoMobile]: portraitPhotoStyles.container,
+  [mediaQueries.desktop]: portraitPhotoStyles.container,
+});
+
+const StyledHeroImage = styled(Image)({
+  transform: `scale(1.15) translate(-5%, -5%)`,
+
+  [mediaQueries.portraitPhotoMobile]: portraitPhotoStyles.image,
+  [mediaQueries.desktop]: portraitPhotoStyles.image,
 });
