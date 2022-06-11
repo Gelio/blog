@@ -2,7 +2,7 @@ import glob from "glob";
 import { fileURLToPath } from "node:url";
 import { readFile } from "node:fs/promises";
 import grayMatter from "gray-matter";
-import { either, readonlyArray, taskEither } from "fp-ts/es6";
+import { date, either, ord, readonlyArray, taskEither } from "fp-ts/es6";
 import { pipe } from "fp-ts/es6/function";
 import { z } from "zod";
 import { task } from "fp-ts";
@@ -64,8 +64,19 @@ export const parseContentWithMetadata = pipe(
           } as const)
       )
     )
+  ),
+  taskEither.map(
+    readonlyArray.sort(
+      pipe(
+        date.Ord,
+        ord.contramap(
+          (contentWithMetadata: ContentWithMetadata) =>
+            contentWithMetadata.contentMetadata.date
+        ),
+        ord.reverse
+      )
+    )
   )
-  // TODO: sort by date
 );
 
 type ContentMetadataParseError =
