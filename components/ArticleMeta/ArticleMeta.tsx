@@ -15,7 +15,9 @@ export const ArticleMeta = ({
   tagNames,
 }: ArticleMetaProps) => (
   <StyledArticleMetaContainer>
-    <StyledArticleMetaItem>{createdDate}</StyledArticleMetaItem>
+    <StyledArticleMetaItem>
+      {formatDateString(createdDate)}
+    </StyledArticleMetaItem>
     <StyledArticleMetaItem>{readingDuration}</StyledArticleMetaItem>
     <StyledArticleMetaItem>
       <Tags names={tagNames} />
@@ -34,3 +36,13 @@ const StyledArticleMetaItem = styled("span")(({ theme }) => ({
   color: theme.color.text.desaturated,
   fontSize: rem(16),
 }));
+
+const formatDateString = (dateString: string) => {
+  const date = new Date(dateString);
+
+  return `${date.getFullYear()}-${padDateElement(
+    date.getMonth() + 1
+  )}-${padDateElement(date.getDate())}`;
+};
+
+const padDateElement = (value: number) => value.toString().padStart(2, "0");

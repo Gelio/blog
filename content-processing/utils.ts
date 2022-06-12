@@ -1,5 +1,6 @@
 import { either } from "fp-ts";
 import { flow, pipe } from "fp-ts/function";
+import { z } from "zod";
 
 /**
  * Serializes and deserializes the result if it is `Left`.
@@ -16,3 +17,16 @@ export const reserializeIfError = <E, A>(
   result: either.Either<E, A>
 ): either.Either<E, A> =>
   pipe(result, either.mapLeft(flow(JSON.stringify, JSON.parse)));
+
+// NOTE: the suggestion from the zod README to use z.ZodType or
+// z.ZodTypeAny leads to this function returning `any`
+// https://github.com/colinhacks/zod#writing-generic-functions
+// We need to manually specify ZodType's generic arguments for
+// `safeParse` to retain the types
+export const safeParseSchema = <Output, Def, Input>(
+  schema: z.ZodType<Output, Def, Input>,
+  data: unknown
+) =>
+  pipe(schema.safeParse(data), (result) =>
+    result.success ? either.right(result.data) : either.left(result.error)
+  );

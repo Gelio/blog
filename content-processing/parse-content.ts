@@ -5,6 +5,7 @@ import grayMatter from "gray-matter";
 import { date, either, ord, readonlyArray, task, taskEither } from "fp-ts";
 import { pipe } from "fp-ts/function";
 import { z } from "zod";
+import { safeParseSchema } from "./utils";
 
 const contentGlob = "content/**/*.mdx";
 
@@ -129,18 +130,18 @@ const parseContentMetadata = (
         error: error as Error,
       })
     ),
-    taskEither.chain((contents) => {
+    taskEither.chainEitherK((contents) => {
       const { data } = grayMatter(contents);
 
-      return () =>
-        contentFrontMatterSchema.safeParseAsync(data).then((result) =>
-          result.success
-            ? either.right(result.data)
-            : either.left<ContentMetadataParseError>({
-                type: "cannot-parse-frontmatter",
-                readFrontMatter: data,
-                error: result.error,
-              })
-        );
+      return pipe(
+        safeParseSchema(contentFrontMatterSchema, data),
+        either.mapLeft(
+          (error): ContentMetadataParseError => ({
+            type: "cannot-parse-frontmatter",
+            readFrontMatter: data,
+            error,
+          })
+        )
+      );
     })
   );

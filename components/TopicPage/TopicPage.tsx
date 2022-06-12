@@ -54,7 +54,7 @@ export const TopicPage = ({ topicName, postsResult }: TopicPageProps) => {
                   <ArticleCard
                     key={post.contentMetadata.slug}
                     readingDuration="14 minutes"
-                    createdDate="2022-05-01"
+                    createdDate={post.contentMetadata.date}
                     tagNames={post.contentMetadata.tags}
                     title={post.contentMetadata.title}
                     slug={post.contentMetadata.slug}
@@ -65,16 +65,19 @@ export const TopicPage = ({ topicName, postsResult }: TopicPageProps) => {
                 ))}
               </StyledArticleCardsContainer>
 
-              <StyledPaginationContainer>
-                <LeftButtonContainer>
-                  <NavigationButton>Older</NavigationButton>
-                </LeftButtonContainer>
+              {/* TODO: enable pagination after it works */}
+              {false && (
+                <StyledPaginationContainer>
+                  <LeftButtonContainer>
+                    <NavigationButton>Older</NavigationButton>
+                  </LeftButtonContainer>
 
-                {/* NOTE: filler between the buttons */}
-                <div />
+                  {/* NOTE: filler between the buttons */}
+                  <div />
 
-                <NavigationButton>Newer</NavigationButton>
-              </StyledPaginationContainer>
+                  <NavigationButton>Newer</NavigationButton>
+                </StyledPaginationContainer>
+              )}
             </>
           )
         )

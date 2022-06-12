@@ -1,7 +1,9 @@
-import { array, string, task, taskEither } from "fp-ts";
+import { array, either, string, task, taskEither } from "fp-ts";
 import { pipe } from "fp-ts/function";
 import path from "path";
+import { z } from "zod";
 import { ContentWithMetadata } from "../parse-content";
+import { safeParseSchema } from "../utils";
 import {
   ensureParentDirectoryExists,
   FileWriteError,
@@ -95,11 +97,36 @@ const createPerTopicIndexes = (topicsWithContentMap: TopicsWithContentMap) =>
     )
   );
 
+const contentMetadataSchema = z.object({
+  title: z.string(),
+  date: z.string(),
+  tags: z.array(z.string()),
+  slug: z.string(),
+});
+
+const topicIndexSchema = z.array(
+  z.object({
+    contentFilePath: z.string(),
+    contentMetadata: contentMetadataSchema,
+  })
+);
+
+export type TopicIndex = z.infer<typeof topicIndexSchema>;
+
 export const readTopicIndex = (topicName: string) =>
   pipe(
     taskEither.rightIO(getTopicIndexPath(topicName)),
     taskEither.chainW(safeReadIndex),
-    taskEither.map((data) => data as ContentWithMetadata[])
+    taskEither.chainEitherKW((rawTopicIndex) =>
+      pipe(
+        safeParseSchema(topicIndexSchema, rawTopicIndex),
+        either.mapLeft((error) => ({
+          type: "topic-index-parse-error",
+          topicName,
+          error,
+        }))
+      )
+    )
   );
 
 export const readTopicsSummaryIndex = pipe(
