@@ -6,10 +6,9 @@ import {
   ensureParentDirectoryExists,
   FileWriteError,
   getIndexFilePath,
+  safeReadIndex,
   safeWriteIndex,
 } from "./utils";
-
-export type AllContentIndex = ContentWithMetadata[];
 
 const topicsIndexesDirectoryName = "topics";
 const topicsIndexFileName = "topics.json";
@@ -45,11 +44,12 @@ export const createTopicIndexes = (
     taskEither.map(() => undefined)
   );
 
+const getTopicIndexPath = (topicName: string) =>
+  getIndexFilePath(path.join(topicsIndexesDirectoryName, `${topicName}.json`));
+
 const createPerTopicIndexes = (topicsWithContentMap: TopicsWithContentMap) =>
   pipe(
-    taskEither.rightIO(
-      getIndexFilePath(path.join(topicsIndexesDirectoryName, "any"))
-    ),
+    taskEither.rightIO(getTopicIndexPath("any")),
     taskEither.chainW(ensureParentDirectoryExists),
     taskEither.mapLeft(
       (error) =>
@@ -62,11 +62,7 @@ const createPerTopicIndexes = (topicsWithContentMap: TopicsWithContentMap) =>
       pipe(
         Array.from(topicsWithContentMap.entries()).map(([topic, contents]) =>
           pipe(
-            taskEither.rightIO(
-              getIndexFilePath(
-                path.join(topicsIndexesDirectoryName, `${topic}.json`)
-              )
-            ),
+            taskEither.rightIO(getTopicIndexPath(topic)),
             taskEither.chain((indexFilePath) =>
               safeWriteIndex(indexFilePath, contents)
             ),
@@ -96,6 +92,19 @@ const createPerTopicIndexes = (topicsWithContentMap: TopicsWithContentMap) =>
       )
     )
   );
+
+export const readTopicIndex = (topicName: string) =>
+  pipe(
+    taskEither.rightIO(getTopicIndexPath(topicName)),
+    taskEither.chainW(safeReadIndex),
+    taskEither.map((data) => data as ContentWithMetadata[])
+  );
+
+export const readTopicsSummaryIndex = pipe(
+  taskEither.rightIO(getIndexFilePath(topicsIndexFileName)),
+  taskEither.chainW(safeReadIndex),
+  taskEither.map((data) => data as string[])
+);
 
 const createTopicsSummary = (topicsWithContentMap: TopicsWithContentMap) =>
   pipe(

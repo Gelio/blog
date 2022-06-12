@@ -4,6 +4,7 @@ import { ContentWithMetadata } from "../parse-content";
 import {
   ensureParentDirectoryExists,
   getIndexFilePath,
+  safeReadIndex,
   safeWriteIndex,
 } from "./utils";
 
@@ -92,3 +93,9 @@ export const createSlugReverseMappingIndex = (
       )
     )
   );
+
+export const readSlugReverseMapping = pipe(
+  taskEither.rightIO(getIndexFilePath(slugReverseMappingIndexName)),
+  taskEither.chainW(safeReadIndex),
+  taskEither.map((data) => data as SlugReverseMapping)
+);

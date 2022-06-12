@@ -4,6 +4,7 @@ import { ContentWithMetadata } from "../parse-content";
 import {
   ensureParentDirectoryExists,
   getIndexFilePath,
+  safeReadIndex,
   safeWriteIndex,
 } from "./utils";
 
@@ -32,3 +33,9 @@ export const createAllContentIndex = (
       safeWriteIndex(indexFilePath, contentWithMetadata)
     )
   );
+
+export const readAllContentIndex = pipe(
+  taskEither.rightIO(getIndexFilePath(allContentIndexName)),
+  taskEither.chainW(safeReadIndex),
+  taskEither.map((data) => data as AllContentIndex)
+);

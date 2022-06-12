@@ -1,4 +1,4 @@
-import { io } from "fp-ts/es6";
+import { either, io } from "fp-ts/es6";
 import { pipe } from "fp-ts/es6/function";
 import path from "node:path";
 import fs from "node:fs/promises";
@@ -54,4 +54,55 @@ export const safeWriteIndex = (
       type: "file-write-error",
       error,
     })
+  );
+
+interface FileReadError {
+  type: "file-read-error";
+  error: unknown;
+  filePath: string;
+}
+
+const safeReadFile = (
+  filePath: string
+): taskEither.TaskEither<FileReadError, string> =>
+  taskEither.tryCatch(
+    () => fs.readFile(filePath, { encoding: "utf-8" }),
+    (error): FileReadError => ({
+      type: "file-read-error",
+      error,
+      filePath,
+    })
+  );
+
+interface IndexParseError {
+  type: "json-parse-error";
+  error: unknown;
+}
+
+const safeParseJSON = (data: string): either.Either<IndexParseError, unknown> =>
+  either.tryCatch(
+    () => JSON.parse(data),
+    (error): IndexParseError => ({
+      type: "json-parse-error",
+      error,
+    })
+  );
+
+interface IndexReadError {
+  type: "index-read-error";
+  filePath: string;
+  error: FileReadError | IndexParseError;
+}
+
+export const safeReadIndex = (filePath: string) =>
+  pipe(
+    safeReadFile(filePath),
+    taskEither.chainEitherKW(safeParseJSON),
+    taskEither.mapLeft(
+      (error): IndexReadError => ({
+        type: "index-read-error",
+        filePath,
+        error,
+      })
+    )
   );
