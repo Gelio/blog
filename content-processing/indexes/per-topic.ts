@@ -1,4 +1,4 @@
-import { array, task, taskEither } from "fp-ts";
+import { array, string, task, taskEither } from "fp-ts";
 import { pipe } from "fp-ts/function";
 import path from "path";
 import { ContentWithMetadata } from "../parse-content";
@@ -121,7 +121,7 @@ const createTopicsSummary = (topicsWithContentMap: TopicsWithContentMap) =>
       pipe(
         safeWriteIndex(
           topicsIndexFilePath,
-          Array.from(topicsWithContentMap.keys())
+          pipe(Array.from(topicsWithContentMap.keys()), array.sort(string.Ord))
         ),
         taskEither.mapLeft(
           (error) =>
