@@ -5,12 +5,12 @@ import fs from "fs/promises";
 import { fileURLToPath } from "url";
 
 export const getIndexesDirectoryPath: io.IO<string> = () => {
-  const indexesDirectoryPath = fileURLToPath(new URL(".", import.meta.url));
+  const thisFilePath = fileURLToPath(import.meta.url);
 
-  const repositoryRootDirectoryPath = pipe(
-    indexesDirectoryPath,
-    path.dirname,
-    path.dirname
+  const indexesDirectoryPath = path.dirname(thisFilePath);
+  const contentProcessingDirectoryPath = path.dirname(indexesDirectoryPath);
+  const repositoryRootDirectoryPath = path.dirname(
+    contentProcessingDirectoryPath
   );
 
   return path.join(repositoryRootDirectoryPath, "content-indexes");
