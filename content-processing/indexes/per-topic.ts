@@ -5,6 +5,7 @@ import { z } from "zod";
 import { ContentWithMetadata } from "../parse-content";
 import { safeParseSchema } from "../utils";
 import {
+  contentWithMetadataSchema,
   ensureParentDirectoryExists,
   FileWriteError,
   getIndexFilePath,
@@ -97,20 +98,7 @@ const createPerTopicIndexes = (topicsWithContentMap: TopicsWithContentMap) =>
     )
   );
 
-const contentMetadataSchema = z.object({
-  title: z.string(),
-  date: z.string(),
-  tags: z.array(z.string()),
-  slug: z.string(),
-  readingTimeMin: z.number(),
-});
-
-const topicIndexSchema = z.array(
-  z.object({
-    contentFilePath: z.string(),
-    contentMetadata: contentMetadataSchema,
-  })
-);
+const topicIndexSchema = z.array(contentWithMetadataSchema);
 
 export type TopicIndex = z.infer<typeof topicIndexSchema>;
 
@@ -121,11 +109,14 @@ export const readTopicIndex = (topicName: string) =>
     taskEither.chainEitherKW((rawTopicIndex) =>
       pipe(
         safeParseSchema(topicIndexSchema, rawTopicIndex),
-        either.mapLeft((error) => ({
-          type: "topic-index-parse-error",
-          topicName,
-          error,
-        }))
+        either.mapLeft(
+          (error) =>
+            ({
+              type: "topic-index-parse-error",
+              topicName,
+              error,
+            } as const)
+        )
       )
     )
   );

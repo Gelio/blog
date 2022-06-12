@@ -3,6 +3,7 @@ import { pipe } from "fp-ts/function";
 import path from "path";
 import fs from "fs/promises";
 import { fileURLToPath } from "url";
+import { z } from "zod";
 
 export const getIndexesDirectoryPath: io.IO<string> = () => {
   const thisFilePath = fileURLToPath(import.meta.url);
@@ -55,13 +56,13 @@ export const safeWriteIndex = (
     })
   );
 
-interface FileReadError {
+export interface FileReadError {
   type: "file-read-error";
   error: unknown;
   filePath: string;
 }
 
-const safeReadFile = (
+export const safeReadFile = (
   filePath: string
 ): taskEither.TaskEither<FileReadError, string> =>
   taskEither.tryCatch(
@@ -87,7 +88,7 @@ const safeParseJSON = (data: string): either.Either<IndexParseError, unknown> =>
     })
   );
 
-interface IndexReadError {
+export interface IndexReadError {
   type: "index-read-error";
   filePath: string;
   error: FileReadError | IndexParseError;
@@ -105,3 +106,19 @@ export const safeReadIndex = (filePath: string) =>
       })
     )
   );
+
+export const contentMetadataSchema = z.object({
+  title: z.string(),
+  date: z.string(),
+  tags: z.array(z.string()),
+  slug: z.string(),
+  readingTimeMin: z.number(),
+});
+export type ContentMetadata = z.infer<typeof contentMetadataSchema>;
+
+export const contentWithMetadataSchema = z.object({
+  contentFilePath: z.string(),
+  contentMetadata: contentMetadataSchema,
+});
+
+export type ContentWithMetadata = z.infer<typeof contentWithMetadataSchema>;

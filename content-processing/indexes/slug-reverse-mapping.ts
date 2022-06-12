@@ -1,15 +1,19 @@
 import { either, taskEither } from "fp-ts";
 import { pipe } from "fp-ts/function";
+import { z } from "zod";
 import { ContentWithMetadata } from "../parse-content";
+import { safeParseSchema } from "../utils";
 import {
+  contentWithMetadataSchema,
   ensureParentDirectoryExists,
   getIndexFilePath,
+  IndexReadError,
   safeReadIndex,
   safeWriteIndex,
 } from "./utils";
 
 /** Keys are slugs */
-export type SlugReverseMapping = Record<string, ContentWithMetadata>;
+type SlugReverseMappingOutput = Record<string, ContentWithMetadata>;
 
 const slugReverseMappingIndexName = "slug-reverse-mapping.json";
 
@@ -39,7 +43,7 @@ export const createSlugReverseMappingIndex = (
     taskEither.apSW(
       "slugReverseMapping",
       taskEither.fromEither(
-        ((): either.Either<DuplicateSlugError[], SlugReverseMapping> => {
+        ((): either.Either<DuplicateSlugError[], SlugReverseMappingOutput> => {
           const slugReverseMappingWithDuplicates: Record<
             string,
             ContentWithMetadata[]
@@ -56,12 +60,12 @@ export const createSlugReverseMappingIndex = (
           });
 
           const duplicateErrors: DuplicateSlugError[] = [];
-          const slugReverseMapping: SlugReverseMapping = {};
+          const slugReverseMapping: SlugReverseMappingOutput = {};
 
           Object.entries(slugReverseMappingWithDuplicates).forEach(
             ([slug, contents]) => {
               if (contents.length === 1) {
-                slugReverseMapping[slug] = contents[0];
+                slugReverseMapping[slug] = contents[0]!;
               } else {
                 duplicateErrors.push({
                   slug,
@@ -94,8 +98,34 @@ export const createSlugReverseMappingIndex = (
     )
   );
 
+const slugReverseMappingSchema = z.record(
+  z.string(),
+  contentWithMetadataSchema
+);
+
+/** Keys are slugs */
+export type SlugReverseMapping = z.infer<typeof slugReverseMappingSchema>;
+
+export type ReadSlugReverseMappingError =
+  | IndexReadError
+  | {
+      type: "slug-reverse-mapping-parse-error";
+      error: z.ZodError;
+    };
+
 export const readSlugReverseMapping = pipe(
   taskEither.rightIO(getIndexFilePath(slugReverseMappingIndexName)),
   taskEither.chainW(safeReadIndex),
-  taskEither.map((data) => data as SlugReverseMapping)
+  taskEither.chainEitherKW((rawSlugReverseMapping) =>
+    pipe(
+      safeParseSchema(slugReverseMappingSchema, rawSlugReverseMapping),
+      either.mapLeft(
+        (error): ReadSlugReverseMappingError =>
+          ({
+            type: "slug-reverse-mapping-parse-error",
+            error,
+          } as const)
+      )
+    )
+  )
 );
