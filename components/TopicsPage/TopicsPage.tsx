@@ -1,5 +1,8 @@
 import styled from "@emotion/styled";
+import { either } from "fp-ts";
+import { pipe } from "fp-ts/function";
 import Link from "next/link";
+import { readTopicsSummaryIndex } from "../../content-processing/indexes/per-topic";
 import {
   pageContentMarginTop,
   responsiveContainer,
@@ -10,35 +13,45 @@ import {
   decorationOnHoverLinkStyle,
   headingStyle,
 } from "../../styles/typography";
+import {
+  DevOnlyErrorDetails,
+  ErrorAlert,
+  ErrorAlertContainer,
+} from "../ErrorAlert";
 import { Layout } from "../Layout";
 import { getTopicPagePath } from "../TopicPage";
 
-export const TopicsPage = () => {
-  const topics = [
-    "architecture",
-    "css",
-    "blog",
-    "rust",
-    "frontend",
-    "golang",
-    "personal-projects",
-    "pr-reviews",
-    "today-i-learned",
-  ];
+interface TopicsPageProps {
+  topicsResult: Awaited<ReturnType<typeof readTopicsSummaryIndex>>;
+}
 
+export const TopicsPage = ({ topicsResult }: TopicsPageProps) => {
   return (
     <Layout>
       <StyledMainContent>
         <StyledMainHeading>Topics I write about</StyledMainHeading>
       </StyledMainContent>
 
-      <TopicsContainer>
-        {topics.map((topic) => (
-          <Link href={getTopicPagePath(topic)} passHref key={topic}>
-            <TopicLink>{topic}</TopicLink>
-          </Link>
-        ))}
-      </TopicsContainer>
+      {pipe(
+        topicsResult,
+        either.match(
+          (error) => (
+            <ErrorAlertContainer>
+              <ErrorAlert>Could not read topics index file.</ErrorAlert>
+              <DevOnlyErrorDetails error={error} />
+            </ErrorAlertContainer>
+          ),
+          (topics) => (
+            <TopicsContainer>
+              {topics.map((topic) => (
+                <Link href={getTopicPagePath(topic)} passHref key={topic}>
+                  <TopicLink>{topic}</TopicLink>
+                </Link>
+              ))}
+            </TopicsContainer>
+          )
+        )
+      )}
     </Layout>
   );
 };
