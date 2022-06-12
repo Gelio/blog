@@ -1,9 +1,8 @@
-import { either, io } from "fp-ts/es6";
-import { pipe } from "fp-ts/es6/function";
+import { either, io, taskEither } from "fp-ts";
+import { pipe } from "fp-ts/function";
 import path from "path";
 import fs from "fs/promises";
 import { fileURLToPath } from "url";
-import { taskEither } from "fp-ts";
 
 export const getIndexesDirectoryPath: io.IO<string> = () => {
   const indexesDirectoryPath = fileURLToPath(new URL(".", import.meta.url));

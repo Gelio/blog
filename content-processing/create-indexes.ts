@@ -1,5 +1,5 @@
-import { either, task, taskEither } from "fp-ts/es6";
-import { pipe } from "fp-ts/es6/function";
+import { either, task, taskEither } from "fp-ts";
+import { pipe } from "fp-ts/function";
 import rimraf from "rimraf";
 import {
   createAllContentIndex,

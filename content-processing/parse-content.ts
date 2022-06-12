@@ -2,10 +2,9 @@ import glob from "glob";
 import { fileURLToPath } from "url";
 import { readFile } from "fs/promises";
 import grayMatter from "gray-matter";
-import { date, either, ord, readonlyArray, taskEither } from "fp-ts/es6";
-import { pipe } from "fp-ts/es6/function";
+import { date, either, ord, readonlyArray, task, taskEither } from "fp-ts";
+import { pipe } from "fp-ts/function";
 import { z } from "zod";
-import { task } from "fp-ts";
 
 const contentGlob = "content/**/*.mdx";
 

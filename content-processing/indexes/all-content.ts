@@ -1,5 +1,5 @@
-import { taskEither } from "fp-ts/es6";
-import { flow, pipe } from "fp-ts/es6/function";
+import { taskEither } from "fp-ts";
+import { flow, pipe } from "fp-ts/function";
 import { ContentWithMetadata } from "../parse-content";
 import {
   ensureParentDirectoryExists,
