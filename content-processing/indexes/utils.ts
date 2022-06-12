@@ -1,8 +1,8 @@
 import { either, io } from "fp-ts/es6";
 import { pipe } from "fp-ts/es6/function";
-import path from "node:path";
-import fs from "node:fs/promises";
-import { fileURLToPath } from "node:url";
+import path from "path";
+import fs from "fs/promises";
+import { fileURLToPath } from "url";
 import { taskEither } from "fp-ts";
 
 export const getIndexesDirectoryPath: io.IO<string> = () => {

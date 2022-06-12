@@ -1,6 +1,6 @@
 import { array, task, taskEither } from "fp-ts/es6";
 import { pipe } from "fp-ts/es6/function";
-import path from "node:path";
+import path from "path";
 import { ContentWithMetadata } from "../parse-content";
 import {
   ensureParentDirectoryExists,

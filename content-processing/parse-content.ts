@@ -1,6 +1,6 @@
 import glob from "glob";
-import { fileURLToPath } from "node:url";
-import { readFile } from "node:fs/promises";
+import { fileURLToPath } from "url";
+import { readFile } from "fs/promises";
 import grayMatter from "gray-matter";
 import { date, either, ord, readonlyArray, taskEither } from "fp-ts/es6";
 import { pipe } from "fp-ts/es6/function";
