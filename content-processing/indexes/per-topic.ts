@@ -13,6 +13,8 @@ import {
 const topicsIndexesDirectoryName = "topics";
 const topicsIndexFileName = "topics.json";
 
+// TODO: add topic descriptions to indexes
+
 type TopicsWithContentMap = Map<string, ContentWithMetadata[]>;
 
 export const createTopicIndexes = (

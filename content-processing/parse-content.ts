@@ -8,6 +8,9 @@ import { z } from "zod";
 
 const contentGlob = "content/**/*.mdx";
 
+// TODO: add reading time to content metadata
+// TODO: add summary to content metadata
+
 const getContentFilePaths: taskEither.TaskEither<Error, string[]> = () =>
   new Promise((resolve) => {
     const repositoryDirectoryPath = fileURLToPath(
