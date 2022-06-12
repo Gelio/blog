@@ -5,11 +5,11 @@ import grayMatter from "gray-matter";
 import { date, either, ord, readonlyArray, task, taskEither } from "fp-ts";
 import { pipe } from "fp-ts/function";
 import { z } from "zod";
+import readingTime from "reading-time";
 import { safeParseSchema } from "./utils";
 
 const contentGlob = "content/**/*.mdx";
 
-// TODO: add reading time to content metadata
 // TODO: add summary to content metadata
 
 const getContentFilePaths: taskEither.TaskEither<Error, string[]> = () =>
@@ -117,11 +117,15 @@ const contentFrontMatterSchema = z.object({
 
   slug: z.string().min(1),
 });
-export type ContentFrontMatter = z.infer<typeof contentFrontMatterSchema>;
+type ContentFrontMatter = z.infer<typeof contentFrontMatterSchema>;
+
+export type ContentMetadata = ContentFrontMatter & {
+  readingTimeMin: number;
+};
 
 const parseContentMetadata = (
   contentFilePath: string
-): taskEither.TaskEither<ContentMetadataParseError, ContentFrontMatter> =>
+): taskEither.TaskEither<ContentMetadataParseError, ContentMetadata> =>
   pipe(
     taskEither.tryCatch(
       () => readFile(contentFilePath, { encoding: "utf-8" }),
@@ -131,15 +135,19 @@ const parseContentMetadata = (
       })
     ),
     taskEither.chainEitherK((contents) => {
-      const { data } = grayMatter(contents);
+      const { data, content } = grayMatter(contents);
 
       return pipe(
         safeParseSchema(contentFrontMatterSchema, data),
-        either.mapLeft(
+        either.bimap(
           (error): ContentMetadataParseError => ({
             type: "cannot-parse-frontmatter",
             readFrontMatter: data,
             error,
+          }),
+          (parsedFrontMatter): ContentMetadata => ({
+            ...parsedFrontMatter,
+            readingTimeMin: readingTime(content).minutes,
           })
         )
       );

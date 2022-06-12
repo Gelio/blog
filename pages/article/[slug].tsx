@@ -16,7 +16,7 @@ const ArticlePage = () => {
       <StyledArticleContainer>
         <ArticleHeader
           title="Blog hosting decisions"
-          readingDuration="14 minute read"
+          readingTimeMin={14}
           createdDate="2022-04-09"
           tagNames={["blog", "architecture", "frontend"]}
         />

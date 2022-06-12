@@ -102,6 +102,7 @@ const contentMetadataSchema = z.object({
   date: z.string(),
   tags: z.array(z.string()),
   slug: z.string(),
+  readingTimeMin: z.number(),
 });
 
 const topicIndexSchema = z.array(

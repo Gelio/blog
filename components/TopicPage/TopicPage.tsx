@@ -53,7 +53,7 @@ export const TopicPage = ({ topicName, postsResult }: TopicPageProps) => {
                 {posts.map((post) => (
                   <ArticleCard
                     key={post.contentMetadata.slug}
-                    readingDuration="14 minutes"
+                    readingTimeMin={post.contentMetadata.readingTimeMin}
                     createdDate={post.contentMetadata.date}
                     tagNames={post.contentMetadata.tags}
                     title={post.contentMetadata.title}

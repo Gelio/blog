@@ -5,20 +5,22 @@ import { Tags } from "../Tags";
 
 interface ArticleMetaProps {
   createdDate: string;
-  readingDuration: string;
+  readingTimeMin: number;
   tagNames: string[];
 }
 
 export const ArticleMeta = ({
   createdDate,
-  readingDuration,
+  readingTimeMin,
   tagNames,
 }: ArticleMetaProps) => (
   <StyledArticleMetaContainer>
     <StyledArticleMetaItem>
       {formatDateString(createdDate)}
     </StyledArticleMetaItem>
-    <StyledArticleMetaItem>{readingDuration}</StyledArticleMetaItem>
+    <StyledArticleMetaItem>
+      {formatReadingTime(readingTimeMin)}
+    </StyledArticleMetaItem>
     <StyledArticleMetaItem>
       <Tags names={tagNames} />
     </StyledArticleMetaItem>
@@ -46,3 +48,11 @@ const formatDateString = (dateString: string) => {
 };
 
 const padDateElement = (value: number) => value.toString().padStart(2, "0");
+
+const formatReadingTime = (readingTimeMin: number) => {
+  const roundedReadingTimeMin = Math.ceil(readingTimeMin);
+
+  return `${roundedReadingTimeMin} minute${
+    roundedReadingTimeMin === 1 ? "" : "s"
+  }`;
+};

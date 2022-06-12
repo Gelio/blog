@@ -18,7 +18,7 @@ export const HomePage = () => {
 
       <StyledArticleCardsContainer>
         <ArticleCard
-          readingDuration="14 minutes"
+          readingTimeMin={14}
           createdDate="2022-05-01"
           tagNames={["blog", "architecture", "frontend"]}
           title="Blog hosting decisions"
@@ -29,7 +29,7 @@ export const HomePage = () => {
         />
 
         <ArticleCard
-          readingDuration="14 minutes"
+          readingTimeMin={14}
           createdDate="2022-05-01"
           tagNames={["blog", "architecture", "frontend"]}
           title="Blog hosting decisions"
@@ -40,7 +40,7 @@ export const HomePage = () => {
         />
 
         <ArticleCard
-          readingDuration="14 minutes"
+          readingTimeMin={14}
           createdDate="2022-05-01"
           tagNames={["blog", "architecture", "frontend"]}
           title="Blog hosting decisions"

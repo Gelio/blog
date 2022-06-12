@@ -16,7 +16,7 @@ interface ArticleHeaderProps extends ComponentProps<typeof ArticleMeta> {
 export const ArticleHeader = ({
   title,
   createdDate,
-  readingDuration,
+  readingTimeMin: readingDuration,
   tagNames,
 }: ArticleHeaderProps) => (
   <StyledArticleHeader>
@@ -24,7 +24,7 @@ export const ArticleHeader = ({
 
     <ArticleMeta
       createdDate={createdDate}
-      readingDuration={readingDuration}
+      readingTimeMin={readingDuration}
       tagNames={tagNames}
     />
   </StyledArticleHeader>
