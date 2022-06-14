@@ -11,6 +11,11 @@ export const blogTheme = {
     },
     background: {
       main: "#E7F3F6",
+      light: "#FCFEFF",
+    },
+    error: {
+      background: "#FFECEC",
+      border: "rgba(43, 33, 24, 0.3)",
     },
   },
 };

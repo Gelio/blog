@@ -1,4 +1,10 @@
+import { either, taskEither } from "fp-ts";
+import { serialize } from "next-mdx-remote/serialize";
+import { MDXProvider } from "@mdx-js/react";
+import { pipe } from "fp-ts/function";
+import { GetStaticPaths, GetStaticProps, PageConfig } from "next";
 import Link from "next/link";
+import { ParsedUrlQuery } from "querystring";
 import {
   ArticleHeader,
   StyledArticleContainer,
@@ -8,121 +14,189 @@ import {
   StyledArticleSectionHeading,
 } from "../../components/ArticlePage";
 import { Layout } from "../../components/Layout";
+import {
+  readSlugReverseMapping,
+  ReadSlugReverseMappingError,
+} from "../../content-processing/indexes";
+import {
+  ContentMetadata,
+  FileReadError,
+  safeReadFile,
+} from "../../content-processing/indexes/utils";
+import { MDXRemote } from "next-mdx-remote";
+import {
+  DevOnlyErrorDetails,
+  ErrorAlert,
+  ErrorAlertContainer,
+} from "../../components/ErrorAlert";
+import { contentIncludeFileGlobs } from "../../content-processing/utils";
 
-const ArticlePage = () => {
+interface SourceWithMetadata {
+  mdxSource: any;
+  contentMetadata: ContentMetadata;
+}
+
+interface ArticlePageProps {
+  sourceWithMetadataResult: either.Either<
+    | ReadSlugReverseMappingError
+    | {
+        type: "content-read-error";
+        error: FileReadError;
+      },
+    SourceWithMetadata
+  >;
+}
+
+const ArticlePage = ({ sourceWithMetadataResult }: ArticlePageProps) => {
   return (
     <Layout>
       <StyledArticleContainer>
-        <ArticleHeader
-          title="Blog hosting decisions"
-          readingDuration="14 minute read"
-          createdDate="2022-04-09"
-          tagNames={["blog", "architecture", "frontend"]}
-        />
+        {pipe(
+          sourceWithMetadataResult,
+          either.match(
+            (error) => (
+              <ErrorAlertContainer>
+                <ErrorAlert>Could not get the post.</ErrorAlert>
+                <DevOnlyErrorDetails error={error} />
+              </ErrorAlertContainer>
+            ),
+            ({ contentMetadata, mdxSource }) => (
+              <>
+                <ArticleHeader
+                  title={contentMetadata.title}
+                  readingTimeMin={contentMetadata.readingTimeMin}
+                  createdDate={contentMetadata.date}
+                  tagNames={contentMetadata.tags}
+                />
 
-        <StyledArticleSection>
-          <StyledArticleParagraph>
-            Lorem ipsum dolor sit amet, consectetur adipiscing elit.
-            Pellentesque vulputate sapien vel risus sagittis, et scelerisque ex
-            elementum. Aliquam non porttitor justo, eu bibendum tortor. Vivamus
-            a turpis sem. Curabitur viverra maximus luctus. Nullam id lacus non
-            mauris iaculis sollicitudin quis nec sem. Cras maximus luctus augue
-            sit amet porta. Curabitur id felis vel ligula rhoncus dictum sit
-            amet sed lorem. Quisque lacinia faucibus purus, ac placerat urna
-            tempus a. Maecenas porta tincidunt quam, eu volutpat nisi fermentum
-            eget. Suspendisse in mauris finibus, efficitur ex nec, varius
-            sapien. Nunc fermentum, nisl at interdum varius, odio diam sodales
-            mi, ut mattis metus nibh vitae elit. Phasellus in ultrices ex. Lorem
-            ipsum dolor sit amet, consectetur adipiscing elit. Phasellus dictum,
-            dolor id tincidunt aliquet, eros orci pulvinar nisl, a bibendum eros
-            quam et sem.
-          </StyledArticleParagraph>
-        </StyledArticleSection>
-
-        <StyledArticleSection>
-          <StyledArticleSectionHeading>
-            Some heading
-          </StyledArticleSectionHeading>
-          <StyledArticleParagraph>
-            Pellentesque id justo vehicula, accumsan tellus eget, ultrices ante.
-            Mauris ut turpis ut libero vehicula dapibus. Nunc eget dapibus{" "}
-            <Link href="/abc" passHref>
-              <StyledArticleParagraphLink>massa</StyledArticleParagraphLink>
-            </Link>
-            . Suspendisse potenti. Pellentesque venenatis rhoncus justo, id
-            condimentum ante auctor at. Interdum et malesuada fames ac ante
-            ipsum primis in faucibus. Praesent venenatis tortor sed sollicitudin
-            fermentum. Vestibulum facilisis consectetur lorem, et mattis metus
-            auctor ac. Fusce sit amet diam dictum, varius est quis, feugiat
-            turpis. Aliquam et semper erat, sed pretium dolor. Nam fermentum
-            orci in leo congue sollicitudin. Mauris imperdiet viverra velit.
-          </StyledArticleParagraph>
-          <StyledArticleParagraph>
-            Nulla condimentum magna eu neque cursus pellentesque. Etiam orci
-            enim, porta efficitur sagittis et, vestibulum nec ligula.
-            Pellentesque sed tincidunt ligula, ut condimentum mauris. Sed nulla
-            eros, varius id viverra a, malesuada et lorem. Curabitur turpis
-            libero, elementum ut diam quis, gravida tempor leo. Suspendisse
-            vestibulum convallis sem in tempus. Sed dolor lectus, ultrices quis
-            pretium vitae, viverra sed nisi. Donec tincidunt nisi nec
-            consectetur fringilla. Maecenas elementum quis ante maximus
-            tincidunt. Aliquam varius sem a risus commodo, sed finibus mi
-            tempor. Aliquam urna velit, scelerisque sit amet turpis vitae,
-            varius laoreet nunc. Duis non leo vitae dolor mattis feugiat.
-            Vestibulum in porta sem. Sed vehicula a elit vitae rhoncus. Lorem
-            ipsum dolor sit amet, consectetur adipiscing elit. Sed fringilla ut
-            dui sed tincidunt.
-          </StyledArticleParagraph>
-          <StyledArticleParagraph>
-            Morbi hendrerit id diam a cursus. Curabitur dapibus euismod tempus.
-            Nunc tempus nulla vel pharetra sollicitudin. Praesent dictum risus
-            sit amet tristique laoreet.
-          </StyledArticleParagraph>
-        </StyledArticleSection>
-
-        <StyledArticleSection>
-          <StyledArticleSectionHeading>
-            Some heading
-          </StyledArticleSectionHeading>
-          <StyledArticleParagraph>
-            Pellentesque id justo vehicula, accumsan tellus eget, ultrices ante.
-            Mauris ut turpis ut libero vehicula dapibus. Nunc eget dapibus{" "}
-            <Link href="/abc" passHref>
-              <StyledArticleParagraphLink>massa</StyledArticleParagraphLink>
-            </Link>
-            . Suspendisse potenti. Pellentesque venenatis rhoncus justo, id
-            condimentum ante auctor at. Interdum et malesuada fames ac ante
-            ipsum primis in faucibus. Praesent venenatis tortor sed sollicitudin
-            fermentum. Vestibulum facilisis consectetur lorem, et mattis metus
-            auctor ac. Fusce sit amet diam dictum, varius est quis, feugiat
-            turpis. Aliquam et semper erat, sed pretium dolor. Nam fermentum
-            orci in leo congue sollicitudin. Mauris imperdiet viverra velit.
-          </StyledArticleParagraph>
-          <StyledArticleParagraph>
-            Nulla condimentum magna eu neque cursus pellentesque. Etiam orci
-            enim, porta efficitur sagittis et, vestibulum nec ligula.
-            Pellentesque sed tincidunt ligula, ut condimentum mauris. Sed nulla
-            eros, varius id viverra a, malesuada et lorem. Curabitur turpis
-            libero, elementum ut diam quis, gravida tempor leo. Suspendisse
-            vestibulum convallis sem in tempus. Sed dolor lectus, ultrices quis
-            pretium vitae, viverra sed nisi. Donec tincidunt nisi nec
-            consectetur fringilla. Maecenas elementum quis ante maximus
-            tincidunt. Aliquam varius sem a risus commodo, sed finibus mi
-            tempor. Aliquam urna velit, scelerisque sit amet turpis vitae,
-            varius laoreet nunc. Duis non leo vitae dolor mattis feugiat.
-            Vestibulum in porta sem. Sed vehicula a elit vitae rhoncus. Lorem
-            ipsum dolor sit amet, consectetur adipiscing elit. Sed fringilla ut
-            dui sed tincidunt.
-          </StyledArticleParagraph>
-          <StyledArticleParagraph>
-            Morbi hendrerit id diam a cursus. Curabitur dapibus euismod tempus.
-            Nunc tempus nulla vel pharetra sollicitudin. Praesent dictum risus
-            sit amet tristique laoreet.
-          </StyledArticleParagraph>
-        </StyledArticleSection>
+                <StyledArticleSection>
+                  <MDXProvider
+                    components={{
+                      a: (props) =>
+                        props.href ? (
+                          <Link href={props.href} passHref>
+                            <StyledArticleParagraphLink {...props} />
+                          </Link>
+                        ) : (
+                          (() => {
+                            throw new Error("Link does not have a href");
+                          })()
+                        ),
+                      p: StyledArticleParagraph,
+                      h2: StyledArticleSectionHeading,
+                    }}
+                  >
+                    <MDXRemote {...mdxSource} />
+                  </MDXProvider>
+                </StyledArticleSection>
+              </>
+            )
+          )
+        )}
       </StyledArticleContainer>
     </Layout>
   );
 };
 
 export default ArticlePage;
+
+interface ArticlePageQueryParams extends ParsedUrlQuery {
+  slug: string;
+}
+
+export const getStaticPaths: GetStaticPaths<ArticlePageQueryParams> = () => {
+  return {
+    // TODO: autogenerate the latest X blogposts and the most popular X blogposts
+    paths: [],
+    // NOTE: do not autogenerate all pages during build time.
+    // Generate them on demand.
+    fallback: "blocking",
+  };
+};
+
+export const getStaticProps: GetStaticProps<
+  ArticlePageProps,
+  ArticlePageQueryParams
+> = async (context) => {
+  if (!context.params) {
+    throw new Error(
+      "context.params is undefined even though getStaticPaths exists"
+    );
+  }
+  const { slug } = context.params;
+
+  const sourceWithMetadataResult = await pipe(
+    readSlugReverseMapping,
+    taskEither.chainEitherKW((slugReverseMapping) => {
+      const contentWithMetadata = slugReverseMapping[slug];
+      if (!contentWithMetadata) {
+        return either.left({
+          type: "slug-not-found",
+          slug,
+        } as const);
+      }
+
+      return either.right(contentWithMetadata);
+    }),
+    taskEither.bindTo("contentWithMetadata"),
+    taskEither.bindW(
+      "mdxSource",
+      ({ contentWithMetadata: { contentFilePath } }) =>
+        pipe(
+          safeReadFile(contentFilePath),
+          taskEither.mapLeft(
+            (error) =>
+              ({
+                type: "content-read-error",
+                error,
+              } as const)
+          ),
+          taskEither.chainTaskK(
+            (source) => () => serialize(source, { parseFrontmatter: true })
+          ),
+          taskEither.map((mdxSource) => {
+            // NOTE: delete frontmatter since it cannot be serialized by Next in SSR.
+            // Frontmatter is already available via `contentMetadata`
+            delete mdxSource["frontmatter"];
+            return mdxSource;
+          })
+        )
+    ),
+    taskEither.map(
+      ({
+        contentWithMetadata: { contentMetadata },
+        mdxSource,
+      }): SourceWithMetadata => ({
+        contentMetadata,
+        mdxSource,
+      })
+    )
+  )();
+
+  if (either.isLeft(sourceWithMetadataResult)) {
+    // NOTE: TypeScript cannot infer that the `slug-not-found` case is handled
+    // separately. We must help it via this more lengthy syntax
+    const error = sourceWithMetadataResult.left;
+    if (error.type === "slug-not-found") {
+      return {
+        notFound: true,
+      };
+    }
+
+    return {
+      props: {
+        sourceWithMetadataResult: either.left(error),
+      },
+    };
+  }
+
+  return {
+    props: {
+      sourceWithMetadataResult,
+    },
+  };
+};
+
+export const config: PageConfig = {
+  unstable_includeFiles: contentIncludeFileGlobs,
+};

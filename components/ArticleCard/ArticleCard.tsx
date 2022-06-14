@@ -24,14 +24,14 @@ export const ArticleCard = ({
   summary,
   className,
   tagNames,
-  readingDuration,
+  readingTimeMin,
   createdDate,
 }: ArticleCardProps) => (
   <StyledArticleCardContainer className={className} as="article">
     <StyledArticleCardTitle as={titleAs}>{title}</StyledArticleCardTitle>
 
     <ArticleMeta
-      readingDuration={readingDuration}
+      readingTimeMin={readingTimeMin}
       createdDate={createdDate}
       tagNames={tagNames}
     />

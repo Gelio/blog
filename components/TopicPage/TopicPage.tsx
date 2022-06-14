@@ -1,5 +1,7 @@
 import styled from "@emotion/styled";
-import { useRouter } from "next/router";
+import { either } from "fp-ts";
+import { pipe } from "fp-ts/function";
+import { readTopicIndex } from "../../content-processing/indexes";
 import {
   pageContentMarginTop,
   responsiveContainer,
@@ -9,70 +11,77 @@ import { rem, spacing } from "../../styles/theme";
 import { headingStyle } from "../../styles/typography";
 import { ArticleCard } from "../ArticleCard";
 import { Button } from "../Button";
+import {
+  DevOnlyErrorDetails,
+  ErrorAlert,
+  ErrorAlertContainer,
+} from "../ErrorAlert";
 import { Layout } from "../Layout";
 
-export const TopicPage = () => {
-  const { query } = useRouter();
-  const topicName = query.name as string;
+interface TopicPageProps {
+  topicName: string;
+  postsResult: Awaited<ReturnType<ReturnType<typeof readTopicIndex>>>;
+}
 
+export const TopicPage = ({ topicName, postsResult }: TopicPageProps) => {
   return (
     <Layout>
       <StyledMainContent>
         <StyledPageTitle>Articles about {topicName}</StyledPageTitle>
 
+        {/* TODO: add topic description to indexes */}
         <StyledTopicDescription>
-          Architecture is important to consider in your applications. Lorem
-          ipsum dolor sit amet, consectetur adipiscing elit. Pellentesque
-          vulputate sapien vel risus sagittis, et scelerisque ex elementum.
-          Aliquam non porttitor justo, eu bibendum tortor. Vivamus a turpis sem.
+          {topicName} is important to consider in your applications. Lorem ipsum
+          dolor sit amet, consectetur adipiscing elit. Pellentesque vulputate
+          sapien vel risus sagittis, et scelerisque ex elementum. Aliquam non
+          porttitor justo, eu bibendum tortor. Vivamus a turpis sem.
         </StyledTopicDescription>
       </StyledMainContent>
 
-      <StyledArticleCardsContainer>
-        <ArticleCard
-          readingDuration="14 minutes"
-          createdDate="2022-05-01"
-          tagNames={["blog", "architecture", "frontend"]}
-          title="Blog hosting decisions"
-          slug="blog-hosting-decisions"
-          summary={
-            "Lorem ipsum dolor sit amet, consectetur adipiscing elit. Pellentesque vulputate sapien vel risus sagittis, et scelerisque ex elementum. Aliquam non porttitor justo, eu bibendum tortor. Vivamus a turpis sem."
-          }
-        />
+      {pipe(
+        postsResult,
+        either.match(
+          (error) => (
+            <ErrorAlertContainer>
+              <ErrorAlert>Could not read topic index.</ErrorAlert>
+              <DevOnlyErrorDetails error={error} />
+            </ErrorAlertContainer>
+          ),
+          (posts) => (
+            <>
+              <StyledArticleCardsContainer>
+                {posts.map((post) => (
+                  <ArticleCard
+                    key={post.contentMetadata.slug}
+                    readingTimeMin={post.contentMetadata.readingTimeMin}
+                    createdDate={post.contentMetadata.date}
+                    tagNames={post.contentMetadata.tags}
+                    title={post.contentMetadata.title}
+                    slug={post.contentMetadata.slug}
+                    summary={
+                      "Lorem ipsum dolor sit amet, consectetur adipiscing elit. Pellentesque vulputate sapien vel risus sagittis, et scelerisque ex elementum. Aliquam non porttitor justo, eu bibendum tortor. Vivamus a turpis sem."
+                    }
+                  />
+                ))}
+              </StyledArticleCardsContainer>
 
-        <ArticleCard
-          readingDuration="14 minutes"
-          createdDate="2022-05-01"
-          tagNames={["blog", "architecture", "frontend"]}
-          title="Blog hosting decisions"
-          slug="blog-hosting-decisions"
-          summary={
-            "Lorem ipsum dolor sit amet, consectetur adipiscing elit. Pellentesque vulputate sapien vel risus sagittis, et scelerisque ex elementum. Aliquam non porttitor justo, eu bibendum tortor. Vivamus a turpis sem."
-          }
-        />
+              {/* TODO: enable pagination after it works */}
+              {false && (
+                <StyledPaginationContainer>
+                  <LeftButtonContainer>
+                    <NavigationButton>Older</NavigationButton>
+                  </LeftButtonContainer>
 
-        <ArticleCard
-          readingDuration="14 minutes"
-          createdDate="2022-05-01"
-          tagNames={["blog", "architecture", "frontend"]}
-          title="Blog hosting decisions"
-          slug="blog-hosting-decisions"
-          summary={
-            "Lorem ipsum dolor sit amet, consectetur adipiscing elit. Pellentesque vulputate sapien vel risus sagittis, et scelerisque ex elementum. Aliquam non porttitor justo, eu bibendum tortor. Vivamus a turpis sem."
-          }
-        />
-      </StyledArticleCardsContainer>
+                  {/* NOTE: filler between the buttons */}
+                  <div />
 
-      <StyledPaginationContainer>
-        <LeftButtonContainer>
-          <NavigationButton>Older</NavigationButton>
-        </LeftButtonContainer>
-
-        {/* NOTE: filler between the buttons */}
-        <div />
-
-        <NavigationButton>Newer</NavigationButton>
-      </StyledPaginationContainer>
+                  <NavigationButton>Newer</NavigationButton>
+                </StyledPaginationContainer>
+              )}
+            </>
+          )
+        )
+      )}
     </Layout>
   );
 };
