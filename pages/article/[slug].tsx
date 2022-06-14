@@ -2,7 +2,7 @@ import { either, taskEither } from "fp-ts";
 import { serialize } from "next-mdx-remote/serialize";
 import { MDXProvider } from "@mdx-js/react";
 import { pipe } from "fp-ts/function";
-import { GetStaticPaths, GetStaticProps } from "next";
+import { GetStaticPaths, GetStaticProps, PageConfig } from "next";
 import Link from "next/link";
 import { ParsedUrlQuery } from "querystring";
 import {
@@ -29,6 +29,7 @@ import {
   ErrorAlert,
   ErrorAlertContainer,
 } from "../../components/ErrorAlert";
+import { contentIncludeFileGlobs } from "../../content-processing/utils";
 
 interface SourceWithMetadata {
   mdxSource: any;
@@ -194,4 +195,8 @@ export const getStaticProps: GetStaticProps<
       sourceWithMetadataResult,
     },
   };
+};
+
+export const config: PageConfig = {
+  unstable_includeFiles: contentIncludeFileGlobs,
 };

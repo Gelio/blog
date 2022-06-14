@@ -1,5 +1,6 @@
 import { either } from "fp-ts";
 import { flow, pipe } from "fp-ts/function";
+import type { PageConfig } from "next";
 import { z } from "zod";
 
 /**
@@ -30,3 +31,24 @@ export const safeParseSchema = <Output, Def, Input>(
   pipe(schema.safeParse(data), (result) =>
     result.success ? either.right(result.data) : either.left(result.error)
   );
+
+const globAnyFileInDirectory = (directoryPath: string) =>
+  // NOTE: the `*.*` is mandatory so that minimatch returns only files (with an
+  // extension) and not directories. Otherwise, Next logs an EISDIR when
+  // processing matches.
+  `${directoryPath}/**/*.*`;
+
+/**
+ * Globs pointing to files that are necessary during Incremental Static
+ * Generation of content resources.
+ *
+ * Globs are reletive to the root of the repository.
+ *
+ * They are needed because otherwise Next will exclude these files from the runtime environment of ISG.
+ *
+ * @see https://nextjs.org/docs/advanced-features/output-file-tracing#caveats
+ */
+export const contentIncludeFileGlobs: PageConfig["unstable_includeFiles"] = [
+  "content-indexes",
+  "content",
+].map(globAnyFileInDirectory);
