@@ -1,5 +1,4 @@
 import glob from "glob";
-import { fileURLToPath } from "url";
 import { readFile } from "fs/promises";
 import grayMatter from "gray-matter";
 import { date, either, ord, readonlyArray, task, taskEither } from "fp-ts";
@@ -7,24 +6,39 @@ import { pipe } from "fp-ts/function";
 import { z } from "zod";
 import readingTime from "reading-time";
 import { safeParseSchema } from "./utils";
+import { getRepositoryRootDirectoryPath } from "./indexes/utils";
+import path from "path";
 
 const contentGlob = "content/**/*.mdx";
 
 // TODO: add summary to content metadata
 
-const getContentFilePaths: taskEither.TaskEither<Error, string[]> = () =>
-  new Promise((resolve) => {
-    const repositoryDirectoryPath = fileURLToPath(
-      new URL("..", import.meta.url)
-    );
-    glob(
-      contentGlob,
-      { cwd: repositoryDirectoryPath, absolute: true },
-      (error, matches) => {
-        resolve(error ? either.left(error) : either.right(matches));
-      }
-    );
-  });
+const getContentFilePaths = pipe(
+  taskEither.Do,
+  taskEither.apS(
+    "repositoryDirectoryPath",
+    taskEither.rightIO(getRepositoryRootDirectoryPath)
+  ),
+  taskEither.bindW(
+    "contentFilePaths",
+    ({ repositoryDirectoryPath }) =>
+      () =>
+        new Promise<either.Either<Error, string[]>>((resolve) => {
+          glob(
+            contentGlob,
+            { cwd: repositoryDirectoryPath, absolute: true },
+            (error, matches) => {
+              resolve(error ? either.left(error) : either.right(matches));
+            }
+          );
+        })
+  ),
+  taskEither.map(({ contentFilePaths, repositoryDirectoryPath }) =>
+    contentFilePaths.map((filePath) =>
+      path.relative(repositoryDirectoryPath, filePath)
+    )
+  )
+);
 
 export interface ContentWithMetadata {
   contentFilePath: string;

@@ -2,26 +2,35 @@ import { either, io, taskEither } from "fp-ts";
 import { pipe } from "fp-ts/function";
 import path from "path";
 import fs from "fs/promises";
-import { fileURLToPath } from "url";
 import { z } from "zod";
 
-export const getIndexesDirectoryPath: io.IO<string> = () => {
-  const thisFilePath = fileURLToPath(import.meta.url);
+export const getRepositoryRootDirectoryPath: io.IO<string> = () =>
+  // NOTE: assume the scripts will always be invoked from the Next application root
+  // This is the case:
+  // * when running scripts via `npm run`,
+  // * when running or building in production on Vercel
 
-  const indexesDirectoryPath = path.dirname(thisFilePath);
-  const contentProcessingDirectoryPath = path.dirname(indexesDirectoryPath);
-  const repositoryRootDirectoryPath = path.dirname(
-    contentProcessingDirectoryPath
-  );
+  // NOTE: previously this used `import.meta.env` to determine the path of the
+  // root of the repository, but that proved to be unreliable when the
+  // application was hosted on Vercel. Vercel moved the files around when it
+  // generated the pages using Incremental Static Generation, but the
+  // `import.meta.env` was from the moment the application was built. The file
+  // paths were different. Using `process.cwd()` is the only reliable way to
+  // get the path to the root of the repository and then use relative paths.
+  process.cwd();
 
-  return path.join(repositoryRootDirectoryPath, "content-indexes");
-};
+export const getIndexesDirectoryPath = pipe(
+  getRepositoryRootDirectoryPath,
+  io.map((repositoryRootDirectoryPath) =>
+    path.join(repositoryRootDirectoryPath, "content-indexes")
+  )
+);
 
 export const getIndexFilePath = (indexFileName: string): io.IO<string> =>
   pipe(
     getIndexesDirectoryPath,
-    io.map((repositoryRootDirectoryPath) =>
-      path.join(repositoryRootDirectoryPath, indexFileName)
+    io.map((indexesDirectoryPath) =>
+      path.join(indexesDirectoryPath, indexFileName)
     )
   );
 
@@ -117,6 +126,7 @@ export const contentMetadataSchema = z.object({
 export type ContentMetadata = z.infer<typeof contentMetadataSchema>;
 
 export const contentWithMetadataSchema = z.object({
+  /** Relative path from the repository root to the content file */
   contentFilePath: z.string(),
   contentMetadata: contentMetadataSchema,
 });
