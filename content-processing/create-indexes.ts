@@ -50,8 +50,8 @@ const main = pipe(
   taskEither.matchE(
     (error) =>
       task.fromIO(() => {
-        // TODO: improve displaying errors
-        console.log({ error });
+        console.log("Error occurred");
+        console.dir(error, { depth: null });
       }),
     () =>
       task.fromIO(() => {
