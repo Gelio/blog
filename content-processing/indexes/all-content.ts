@@ -8,8 +8,6 @@ import {
   safeWriteIndex,
 } from "./utils";
 
-export type AllContentIndex = ContentWithMetadata[];
-
 const allContentIndexName = "all-content.json";
 
 export const createAllContentIndex = (
@@ -37,5 +35,5 @@ export const createAllContentIndex = (
 export const readAllContentIndex = pipe(
   taskEither.rightIO(getIndexFilePath(allContentIndexName)),
   taskEither.chainW(safeReadIndex),
-  taskEither.map((data) => data as AllContentIndex)
+  taskEither.map((data) => data as import("./utils").ContentWithMetadata[])
 );
