@@ -1,5 +1,5 @@
-import { array, either, task, taskEither } from "fp-ts";
-import { flow, pipe } from "fp-ts/function";
+import { either, task, taskEither } from "fp-ts";
+import { pipe } from "fp-ts/function";
 import { GetStaticPaths, GetStaticProps } from "next";
 import { serialize } from "next-mdx-remote/serialize";
 import { ParsedUrlQuery } from "querystring";
@@ -49,20 +49,25 @@ export const getStaticProps: GetStaticProps<
   const { name: topicName } = context.params;
   const topicIndexResult = await pipe(
     readTopicIndex(topicName),
-    taskEither.chainTaskK(
-      flow(
-        array.map((articleMetadata) => async () => ({
+    taskEither.bindW("articlesWithSerializedSummary", ({ articles }) =>
+      pipe(
+        articles.map((articleMetadata) => async () => ({
           ...articleMetadata,
           summary: await serialize(articleMetadata.summary),
         })),
-        task.sequenceArray
+        task.sequenceArray,
+        taskEither.rightTask
       )
-    )
+    ),
+    taskEither.map(({ description, articlesWithSerializedSummary }) => ({
+      description,
+      articles: articlesWithSerializedSummary,
+    }))
   )();
 
   return {
     props: {
-      postsResult: reserializeIfError(topicIndexResult),
+      articlesResult: reserializeIfError(topicIndexResult),
       topicName,
     },
   };

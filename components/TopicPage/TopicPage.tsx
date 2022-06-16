@@ -29,29 +29,35 @@ type ArticleMetadataWithSerializedSummary = Omit<
 };
 interface TopicPageProps {
   topicName: string;
-  postsResult: either.Either<
+  articlesResult: either.Either<
     ReadTopicIndexError,
-    readonly ArticleMetadataWithSerializedSummary[]
+    {
+      articles: readonly ArticleMetadataWithSerializedSummary[];
+      description: string;
+    }
   >;
 }
 
-export const TopicPage = ({ topicName, postsResult }: TopicPageProps) => {
+export const TopicPage = ({ topicName, articlesResult }: TopicPageProps) => {
   return (
     <Layout>
       <StyledMainContent>
         <StyledPageTitle>Articles about {topicName}</StyledPageTitle>
 
-        {/* TODO: add topic description to indexes */}
         <StyledTopicDescription>
-          {topicName} is important to consider in your applications. Lorem ipsum
-          dolor sit amet, consectetur adipiscing elit. Pellentesque vulputate
-          sapien vel risus sagittis, et scelerisque ex elementum. Aliquam non
-          porttitor justo, eu bibendum tortor. Vivamus a turpis sem.
+          {pipe(
+            articlesResult,
+            either.match(
+              // NOTE: error is shown below
+              () => null,
+              ({ description }) => description
+            )
+          )}
         </StyledTopicDescription>
       </StyledMainContent>
 
       {pipe(
-        postsResult,
+        articlesResult,
         either.match(
           (error) => (
             <ErrorAlertContainer>
@@ -59,20 +65,20 @@ export const TopicPage = ({ topicName, postsResult }: TopicPageProps) => {
               <DevOnlyErrorDetails error={error} />
             </ErrorAlertContainer>
           ),
-          (posts) => (
+          ({ articles }) => (
             <>
               <StyledArticleCardsContainer>
-                {posts.map((postMetadata) => (
+                {articles.map((article) => (
                   <ArticleCard
-                    key={postMetadata.slug}
-                    readingTimeMin={postMetadata.readingTimeMin}
-                    createdDate={postMetadata.date}
-                    tagNames={postMetadata.tags}
-                    title={postMetadata.title}
-                    slug={postMetadata.slug}
+                    key={article.slug}
+                    readingTimeMin={article.readingTimeMin}
+                    createdDate={article.date}
+                    tagNames={article.tags}
+                    title={article.title}
+                    slug={article.slug}
                     summary={
                       <MDXRemote
-                        {...postMetadata.summary}
+                        {...article.summary}
                         components={{
                           p: StyledArticleCardSummary,
                         }}
