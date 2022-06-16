@@ -1,5 +1,6 @@
 import { either, task, taskEither } from "fp-ts";
 import { pipe } from "fp-ts/function";
+import path from "path";
 import rimraf from "rimraf";
 import {
   createAllArticlesIndex,
@@ -15,7 +16,7 @@ const clearIndexesDirectory: taskEither.TaskEither<Error, undefined> = pipe(
     (indexesDirectoryPath): taskEither.TaskEither<Error, undefined> =>
       () =>
         new Promise((resolve) =>
-          rimraf(`${indexesDirectoryPath}/*`, {}, (error) =>
+          rimraf(path.join(indexesDirectoryPath, "*"), {}, (error) =>
             error
               ? resolve(either.left(error))
               : resolve(either.right(undefined))
