@@ -19,6 +19,7 @@ import {
   ErrorAlert,
   ErrorAlertContainer,
 } from "../ErrorAlert";
+import { HeadDocumentTitle } from "../HeadDocumentTitle";
 import { Layout } from "../Layout";
 
 interface TopicPageProps {
@@ -35,6 +36,8 @@ interface TopicPageProps {
 export const TopicPage = ({ topicName, articlesResult }: TopicPageProps) => {
   return (
     <Layout>
+      <HeadDocumentTitle>{topicName} articles</HeadDocumentTitle>
+
       <StyledMainContent>
         <StyledPageTitle>Articles about {topicName}</StyledPageTitle>
 

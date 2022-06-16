@@ -18,6 +18,7 @@ import {
   ErrorAlert,
   ErrorAlertContainer,
 } from "../ErrorAlert";
+import { HeadDocumentTitle } from "../HeadDocumentTitle";
 import { Layout } from "../Layout";
 import { getTopicPagePath } from "../TopicPage";
 
@@ -28,6 +29,8 @@ interface TopicsPageProps {
 export const TopicsPage = ({ topicsResult }: TopicsPageProps) => {
   return (
     <Layout>
+      <HeadDocumentTitle>Topics</HeadDocumentTitle>
+
       <StyledMainContent>
         <StyledMainHeading>Topics I write about</StyledMainHeading>
       </StyledMainContent>

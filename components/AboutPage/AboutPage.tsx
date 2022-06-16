@@ -11,11 +11,14 @@ import {
   StyledArticleParagraph,
   StyledArticleParagraphLink,
 } from "../ArticlePage/styled-components";
+import { HeadDocumentTitle } from "../HeadDocumentTitle";
 import { Layout } from "../Layout";
 
 export const AboutPage = () => {
   return (
     <Layout>
+      <HeadDocumentTitle>About me</HeadDocumentTitle>
+
       <StyledMainContent>
         <StyledAlwaysLeftColumn>
           <StyledPageHeading>About me</StyledPageHeading>

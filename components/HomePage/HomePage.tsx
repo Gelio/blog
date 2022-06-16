@@ -18,6 +18,7 @@ import {
   ErrorAlert,
   ErrorAlertContainer,
 } from "../ErrorAlert";
+import { HeadDocumentTitle } from "../HeadDocumentTitle";
 import { Layout } from "../Layout";
 
 interface HomePageProps {
@@ -30,6 +31,8 @@ interface HomePageProps {
 export const HomePage = ({ allArticlesResult }: HomePageProps) => {
   return (
     <Layout>
+      <HeadDocumentTitle>Greg Rozdzialik</HeadDocumentTitle>
+
       <StyledMainContent>
         Hey, I&apos;m Greg, welcome to my blog!
       </StyledMainContent>

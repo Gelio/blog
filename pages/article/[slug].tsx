@@ -30,6 +30,7 @@ import {
 } from "../../components/ErrorAlert";
 import { IndexedArticleMetadata } from "../../content-processing/indexes/schema";
 import { contentIncludeFileGlobs } from "../../content-processing/app-utils";
+import { HeadDocumentTitle } from "../../components/HeadDocumentTitle";
 
 interface SourceWithMetadata {
   mdxSource: MDXRemoteSerializeResult;
@@ -56,12 +57,15 @@ const ArticlePage = ({ sourceWithMetadataResult }: ArticlePageProps) => {
           either.match(
             (error) => (
               <ErrorAlertContainer>
+                <HeadDocumentTitle>Article retrieval error</HeadDocumentTitle>
                 <ErrorAlert>Could not get the post.</ErrorAlert>
                 <DevOnlyErrorDetails error={error} />
               </ErrorAlertContainer>
             ),
             ({ articleMetadata, mdxSource }) => (
               <>
+                <HeadDocumentTitle>{articleMetadata.title}</HeadDocumentTitle>
+
                 <ArticleHeader
                   title={articleMetadata.title}
                   readingTimeMin={articleMetadata.readingTimeMin}
