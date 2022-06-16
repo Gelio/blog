@@ -1,6 +1,6 @@
 import { taskEither } from "fp-ts";
 import { flow, pipe } from "fp-ts/function";
-import { ContentWithMetadata } from "../parse-content";
+import { ArticleWithMetadata } from "../parse-articles";
 import {
   ensureParentDirectoryExists,
   getIndexFilePath,
@@ -8,13 +8,13 @@ import {
   safeWriteIndex,
 } from "./utils";
 
-const allContentIndexName = "all-content.json";
+const allArticlesIndexName = "all-articles.json";
 
-export const createAllContentIndex = (
-  contentWithMetadata: readonly ContentWithMetadata[]
+export const createAllArticlesIndex = (
+  articlesWithMetadata: readonly ArticleWithMetadata[]
 ) =>
   pipe(
-    taskEither.rightIO(getIndexFilePath(allContentIndexName)),
+    taskEither.rightIO(getIndexFilePath(allArticlesIndexName)),
     taskEither.chainFirstW(
       flow(
         ensureParentDirectoryExists,
@@ -28,12 +28,12 @@ export const createAllContentIndex = (
       )
     ),
     taskEither.chainW((indexFilePath) =>
-      safeWriteIndex(indexFilePath, contentWithMetadata)
+      safeWriteIndex(indexFilePath, articlesWithMetadata)
     )
   );
 
-export const readAllContentIndex = pipe(
-  taskEither.rightIO(getIndexFilePath(allContentIndexName)),
+export const readAllArticlesIndex = pipe(
+  taskEither.rightIO(getIndexFilePath(allArticlesIndexName)),
   taskEither.chainW(safeReadIndex),
-  taskEither.map((data) => data as import("./utils").ContentWithMetadata[])
+  taskEither.map((data) => data as import("./utils").ArticleWithMetadata[])
 );

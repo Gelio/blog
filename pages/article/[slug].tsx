@@ -19,7 +19,7 @@ import {
   ReadSlugReverseMappingError,
 } from "../../content-processing/indexes";
 import {
-  ContentMetadata,
+  ArticleMetadata,
   FileReadError,
   safeReadFile,
 } from "../../content-processing/indexes/utils";
@@ -33,14 +33,14 @@ import { contentIncludeFileGlobs } from "../../content-processing/utils";
 
 interface SourceWithMetadata {
   mdxSource: any;
-  contentMetadata: ContentMetadata;
+  articleMetadata: ArticleMetadata;
 }
 
 interface ArticlePageProps {
   sourceWithMetadataResult: either.Either<
     | ReadSlugReverseMappingError
     | {
-        type: "content-read-error";
+        type: "article-read-error";
         error: FileReadError;
       },
     SourceWithMetadata
@@ -60,13 +60,13 @@ const ArticlePage = ({ sourceWithMetadataResult }: ArticlePageProps) => {
                 <DevOnlyErrorDetails error={error} />
               </ErrorAlertContainer>
             ),
-            ({ contentMetadata, mdxSource }) => (
+            ({ articleMetadata, mdxSource }) => (
               <>
                 <ArticleHeader
-                  title={contentMetadata.title}
-                  readingTimeMin={contentMetadata.readingTimeMin}
-                  createdDate={contentMetadata.date}
-                  tagNames={contentMetadata.tags}
+                  title={articleMetadata.title}
+                  readingTimeMin={articleMetadata.readingTimeMin}
+                  createdDate={articleMetadata.date}
+                  tagNames={articleMetadata.tags}
                 />
 
                 <StyledArticleSection>
@@ -128,26 +128,26 @@ export const getStaticProps: GetStaticProps<
   const sourceWithMetadataResult = await pipe(
     readSlugReverseMapping,
     taskEither.chainEitherKW((slugReverseMapping) => {
-      const contentWithMetadata = slugReverseMapping[slug];
-      if (!contentWithMetadata) {
+      const articleWithMetadata = slugReverseMapping[slug];
+      if (!articleWithMetadata) {
         return either.left({
           type: "slug-not-found",
           slug,
         } as const);
       }
 
-      return either.right(contentWithMetadata);
+      return either.right(articleWithMetadata);
     }),
-    taskEither.bindTo("contentWithMetadata"),
+    taskEither.bindTo("articleWithMetadata"),
     taskEither.bindW(
       "mdxSource",
-      ({ contentWithMetadata: { contentFilePath } }) =>
+      ({ articleWithMetadata: { articleFilePath } }) =>
         pipe(
-          safeReadFile(contentFilePath),
+          safeReadFile(articleFilePath),
           taskEither.mapLeft(
             (error) =>
               ({
-                type: "content-read-error",
+                type: "article-read-error",
                 error,
               } as const)
           ),
@@ -156,7 +156,7 @@ export const getStaticProps: GetStaticProps<
           ),
           taskEither.map((mdxSource) => {
             // NOTE: delete frontmatter since it cannot be serialized by Next in SSR.
-            // Frontmatter is already available via `contentMetadata`
+            // Frontmatter is already available via `articleMetadata`
             delete mdxSource["frontmatter"];
             return mdxSource;
           })
@@ -164,10 +164,10 @@ export const getStaticProps: GetStaticProps<
     ),
     taskEither.map(
       ({
-        contentWithMetadata: { contentMetadata },
+        articleWithMetadata: { articleMetadata },
         mdxSource,
       }): SourceWithMetadata => ({
-        contentMetadata,
+        articleMetadata,
         mdxSource,
       })
     )

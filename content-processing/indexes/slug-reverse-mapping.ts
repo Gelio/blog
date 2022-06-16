@@ -1,10 +1,10 @@
 import { either, taskEither } from "fp-ts";
 import { pipe } from "fp-ts/function";
 import { z } from "zod";
-import { ContentWithMetadata } from "../parse-content";
+import { ArticleWithMetadata } from "../parse-articles";
 import { safeParseSchema } from "../utils";
 import {
-  contentWithMetadataSchema,
+  articleWithMetadataSchema,
   ensureParentDirectoryExists,
   getIndexFilePath,
   IndexReadError,
@@ -13,7 +13,7 @@ import {
 } from "./utils";
 
 /** Keys are slugs */
-type SlugReverseMappingOutput = Record<string, ContentWithMetadata>;
+type SlugReverseMappingOutput = Record<string, ArticleWithMetadata>;
 
 const slugReverseMappingIndexName = "slug-reverse-mapping.json";
 
@@ -23,7 +23,7 @@ interface DuplicateSlugError {
 }
 
 export const createSlugReverseMappingIndex = (
-  contentWithMetadata: readonly ContentWithMetadata[]
+  articlesWithMetadata: readonly ArticleWithMetadata[]
 ) =>
   pipe(
     taskEither.rightIO(getIndexFilePath(slugReverseMappingIndexName)),
@@ -46,16 +46,16 @@ export const createSlugReverseMappingIndex = (
         ((): either.Either<DuplicateSlugError[], SlugReverseMappingOutput> => {
           const slugReverseMappingWithDuplicates: Record<
             string,
-            ContentWithMetadata[]
+            ArticleWithMetadata[]
           > = {};
 
-          contentWithMetadata.forEach((content) => {
-            const { slug } = content.contentMetadata;
+          articlesWithMetadata.forEach((articleWithMetadata) => {
+            const { slug } = articleWithMetadata.articleMetadata;
             const sameSlugArray = slugReverseMappingWithDuplicates[slug];
             if (sameSlugArray) {
-              sameSlugArray.push(content);
+              sameSlugArray.push(articleWithMetadata);
             } else {
-              slugReverseMappingWithDuplicates[slug] = [content];
+              slugReverseMappingWithDuplicates[slug] = [articleWithMetadata];
             }
           });
 
@@ -63,13 +63,15 @@ export const createSlugReverseMappingIndex = (
           const slugReverseMapping: SlugReverseMappingOutput = {};
 
           Object.entries(slugReverseMappingWithDuplicates).forEach(
-            ([slug, contents]) => {
-              if (contents.length === 1) {
-                slugReverseMapping[slug] = contents[0]!;
+            ([slug, articlesForSlug]) => {
+              if (articlesForSlug.length === 1) {
+                slugReverseMapping[slug] = articlesForSlug[0]!;
               } else {
                 duplicateErrors.push({
                   slug,
-                  filePaths: contents.map((content) => content.contentFilePath),
+                  filePaths: articlesForSlug.map(
+                    ({ articleFilePath }) => articleFilePath
+                  ),
                 });
               }
             }
@@ -100,7 +102,7 @@ export const createSlugReverseMappingIndex = (
 
 const slugReverseMappingSchema = z.record(
   z.string(),
-  contentWithMetadataSchema
+  articleWithMetadataSchema
 );
 
 /** Keys are slugs */

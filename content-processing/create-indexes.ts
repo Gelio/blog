@@ -2,12 +2,12 @@ import { either, task, taskEither } from "fp-ts";
 import { pipe } from "fp-ts/function";
 import rimraf from "rimraf";
 import {
-  createAllContentIndex,
+  createAllArticlesIndex,
   createSlugReverseMappingIndex,
   createTopicIndexes,
 } from "./indexes";
 import { getIndexesDirectoryPath } from "./indexes/utils";
-import { parseContentWithMetadata } from "./parse-content";
+import { parseArticleWithMetadata } from "./parse-articles";
 
 const clearIndexesDirectory: taskEither.TaskEither<Error, undefined> = pipe(
   taskEither.rightIO(getIndexesDirectoryPath),
@@ -25,7 +25,7 @@ const clearIndexesDirectory: taskEither.TaskEither<Error, undefined> = pipe(
 );
 
 const main = pipe(
-  parseContentWithMetadata,
+  parseArticleWithMetadata,
   taskEither.apFirstW(
     pipe(
       clearIndexesDirectory,
@@ -38,13 +38,13 @@ const main = pipe(
       )
     )
   ),
-  taskEither.chainW((contentWithMetadata) =>
+  taskEither.chainW((articlesWithMetadata) =>
     pipe(
       // TODO: show errors from all processes. Right now only the first failed
       // process' errors are returned
-      createAllContentIndex(contentWithMetadata),
-      taskEither.apFirstW(createTopicIndexes(contentWithMetadata)),
-      taskEither.apFirstW(createSlugReverseMappingIndex(contentWithMetadata))
+      createAllArticlesIndex(articlesWithMetadata),
+      taskEither.apFirstW(createTopicIndexes(articlesWithMetadata)),
+      taskEither.apFirstW(createSlugReverseMappingIndex(articlesWithMetadata))
     )
   ),
   taskEither.matchE(

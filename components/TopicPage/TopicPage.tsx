@@ -3,7 +3,7 @@ import { either } from "fp-ts";
 import { pipe } from "fp-ts/function";
 import { MDXRemote, MDXRemoteSerializeResult } from "next-mdx-remote";
 import type { ReadTopicIndexError } from "../../content-processing/indexes";
-import { ContentMetadata } from "../../content-processing/indexes/utils";
+import { ArticleMetadata } from "../../content-processing/indexes/utils";
 import {
   pageContentMarginTop,
   responsiveContainer,
@@ -21,14 +21,14 @@ import {
 } from "../ErrorAlert";
 import { Layout } from "../Layout";
 
-type ContentMetadataWithSerializedSummary = Omit<ContentMetadata, "summary"> & {
+type ArticleMetadataWithSerializedSummary = Omit<ArticleMetadata, "summary"> & {
   summary: MDXRemoteSerializeResult;
 };
 interface TopicPageProps {
   topicName: string;
   postsResult: either.Either<
     ReadTopicIndexError,
-    readonly ContentMetadataWithSerializedSummary[]
+    readonly ArticleMetadataWithSerializedSummary[]
   >;
 }
 

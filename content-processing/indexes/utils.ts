@@ -116,7 +116,7 @@ export const safeReadIndex = (filePath: string) =>
     )
   );
 
-export const contentMetadataSchema = z.object({
+export const articleMetadataSchema = z.object({
   title: z.string(),
   date: z.string(),
   tags: z.array(z.string()),
@@ -124,12 +124,12 @@ export const contentMetadataSchema = z.object({
   readingTimeMin: z.number(),
   summary: z.string(),
 });
-export type ContentMetadata = z.infer<typeof contentMetadataSchema>;
+export type ArticleMetadata = z.infer<typeof articleMetadataSchema>;
 
-export const contentWithMetadataSchema = z.object({
-  /** Relative path from the repository root to the content file */
-  contentFilePath: z.string(),
-  contentMetadata: contentMetadataSchema,
+export const articleWithMetadataSchema = z.object({
+  /** Relative path from the repository root to the article */
+  articleFilePath: z.string(),
+  articleMetadata: articleMetadataSchema,
 });
 
-export type ContentWithMetadata = z.infer<typeof contentWithMetadataSchema>;
+export type ArticleWithMetadata = z.infer<typeof articleWithMetadataSchema>;

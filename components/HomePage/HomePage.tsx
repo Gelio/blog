@@ -4,7 +4,7 @@ import { pipe } from "fp-ts/function";
 import { MDXRemote, MDXRemoteSerializeResult } from "next-mdx-remote";
 
 import {
-  ContentMetadata,
+  ArticleMetadata,
   IndexReadError,
 } from "../../content-processing/indexes/utils";
 import {
@@ -22,13 +22,13 @@ import {
 } from "../ErrorAlert";
 import { Layout } from "../Layout";
 
-type ContentMetadataWithSerializedSummary = Omit<ContentMetadata, "summary"> & {
+type ArticleMetadataWithSerializedSummary = Omit<ArticleMetadata, "summary"> & {
   summary: MDXRemoteSerializeResult;
 };
 interface HomePageProps {
   allPostsResult: either.Either<
     IndexReadError,
-    readonly ContentMetadataWithSerializedSummary[]
+    readonly ArticleMetadataWithSerializedSummary[]
   >;
 }
 

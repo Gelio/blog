@@ -51,9 +51,9 @@ export const getStaticProps: GetStaticProps<
     readTopicIndex(topicName),
     taskEither.chainTaskK(
       flow(
-        array.map((contentWithMetadata) => async () => ({
-          ...contentWithMetadata.contentMetadata,
-          summary: await serialize(contentWithMetadata.contentMetadata.summary),
+        array.map(({ articleMetadata }) => async () => ({
+          ...articleMetadata,
+          summary: await serialize(articleMetadata.summary),
         })),
         task.sequenceArray
       )
