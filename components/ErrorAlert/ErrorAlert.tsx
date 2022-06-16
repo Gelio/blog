@@ -23,9 +23,9 @@ export const ErrorAlertContainer = styled("div")(
 
 export const DevOnlyErrorDetails = ({ error }: { error: unknown }) => {
   useEffect(() => {
-    if (process.env.NODE_ENV !== "production") {
-      console.log("Error occurred", error);
-    }
+    // NOTE: log the error regardless of whether it is development or production.
+    // Assumes there will be no confidential information in the error itself.
+    console.log("Error occurred", error);
   });
 
   if (process.env.NODE_ENV === "production") {

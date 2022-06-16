@@ -122,6 +122,7 @@ export const contentMetadataSchema = z.object({
   tags: z.array(z.string()),
   slug: z.string(),
   readingTimeMin: z.number(),
+  summary: z.string(),
 });
 export type ContentMetadata = z.infer<typeof contentMetadataSchema>;
 
