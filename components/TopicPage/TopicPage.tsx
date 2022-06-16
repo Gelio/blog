@@ -58,9 +58,8 @@ export const TopicPage = ({ topicName, postsResult }: TopicPageProps) => {
                     tagNames={post.contentMetadata.tags}
                     title={post.contentMetadata.title}
                     slug={post.contentMetadata.slug}
-                    summary={
-                      "Lorem ipsum dolor sit amet, consectetur adipiscing elit. Pellentesque vulputate sapien vel risus sagittis, et scelerisque ex elementum. Aliquam non porttitor justo, eu bibendum tortor. Vivamus a turpis sem."
-                    }
+                    // TODO: handle newlines
+                    summary={post.contentMetadata.summary}
                   />
                 ))}
               </StyledArticleCardsContainer>

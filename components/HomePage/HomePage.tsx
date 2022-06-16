@@ -47,9 +47,8 @@ export const HomePage = ({ allPostsResult }: HomePageProps) => {
                   tagNames={post.contentMetadata.tags}
                   title={post.contentMetadata.title}
                   slug={post.contentMetadata.slug}
-                  summary={
-                    "Lorem ipsum dolor sit amet, consectetur adipiscing elit. Pellentesque vulputate sapien vel risus sagittis, et scelerisque ex elementum. Aliquam non porttitor justo, eu bibendum tortor. Vivamus a turpis sem."
-                  }
+                  // TODO: handle new lines
+                  summary={post.contentMetadata.summary}
                 />
               ))}
               {/* TODO: add pagination */}

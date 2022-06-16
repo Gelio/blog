@@ -11,8 +11,6 @@ import path from "path";
 
 const contentGlob = "content/**/*.mdx";
 
-// TODO: add summary to content metadata
-
 const getContentFilePaths = pipe(
   taskEither.Do,
   taskEither.apS(
@@ -130,10 +128,16 @@ const contentFrontMatterSchema = z.object({
   ),
 
   slug: z.string().min(1),
+
+  summary: z.string().min(5),
 });
 type ContentFrontMatter = z.infer<typeof contentFrontMatterSchema>;
 
-export type ContentMetadata = ContentFrontMatter & {
+/**
+ * Parsed content metadata.
+ * This describes the metadata in the content-processing pipeline.
+ */
+type ContentMetadata = ContentFrontMatter & {
   readingTimeMin: number;
 };
 
