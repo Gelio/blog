@@ -30,7 +30,7 @@ import {
 } from "../../components/ErrorAlert";
 import { IndexedArticleMetadata } from "../../content-processing/indexes/schema";
 import { contentIncludeFileGlobs } from "../../content-processing/app-utils";
-import { HeadDocumentTitle } from "../../components/HeadDocumentTitle";
+import { HeadDocumentTitle, HeadMetaDescription } from "../../seo";
 
 interface SourceWithMetadata {
   mdxSource: MDXRemoteSerializeResult;
@@ -65,6 +65,10 @@ const ArticlePage = ({ sourceWithMetadataResult }: ArticlePageProps) => {
             ({ articleMetadata, mdxSource }) => (
               <>
                 <HeadDocumentTitle>{articleMetadata.title}</HeadDocumentTitle>
+                <HeadMetaDescription>
+                  {/* TODO: strip markdown from summary */}
+                  {articleMetadata.summary}
+                </HeadMetaDescription>
 
                 <ArticleHeader
                   title={articleMetadata.title}

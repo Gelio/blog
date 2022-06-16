@@ -18,7 +18,7 @@ import {
   ErrorAlert,
   ErrorAlertContainer,
 } from "../ErrorAlert";
-import { HeadDocumentTitle } from "../HeadDocumentTitle";
+import { HeadDocumentTitle, HeadMetaDescription } from "../../seo";
 import { Layout } from "../Layout";
 import { getTopicPagePath } from "../TopicPage";
 
@@ -30,6 +30,9 @@ export const TopicsPage = ({ topicsResult }: TopicsPageProps) => {
   return (
     <Layout>
       <HeadDocumentTitle>Topics</HeadDocumentTitle>
+      <HeadMetaDescription>
+        A list of topics that I write about on my blog.
+      </HeadMetaDescription>
 
       <StyledMainContent>
         <StyledMainHeading>Topics I write about</StyledMainHeading>

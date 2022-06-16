@@ -2,6 +2,7 @@ import styled from "@emotion/styled";
 import { either } from "fp-ts";
 import { pipe } from "fp-ts/function";
 import { ReadAllArticlesIndexError } from "../../content-processing/indexes";
+import { HeadDocumentTitle, HeadMetaDescription } from "../../seo";
 
 import {
   pageContentMarginTop,
@@ -18,7 +19,6 @@ import {
   ErrorAlert,
   ErrorAlertContainer,
 } from "../ErrorAlert";
-import { HeadDocumentTitle } from "../HeadDocumentTitle";
 import { Layout } from "../Layout";
 
 interface HomePageProps {
@@ -32,6 +32,9 @@ export const HomePage = ({ allArticlesResult }: HomePageProps) => {
   return (
     <Layout>
       <HeadDocumentTitle>Greg Rozdzialik</HeadDocumentTitle>
+      <HeadMetaDescription>
+        A list of the most recent articles published on Greg&apos;s blog.
+      </HeadMetaDescription>
 
       <StyledMainContent>
         Hey, I&apos;m Greg, welcome to my blog!

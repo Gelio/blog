@@ -11,13 +11,16 @@ import {
   StyledArticleParagraph,
   StyledArticleParagraphLink,
 } from "../ArticlePage/styled-components";
-import { HeadDocumentTitle } from "../HeadDocumentTitle";
 import { Layout } from "../Layout";
+import { HeadDocumentTitle, HeadMetaDescription } from "../../seo";
 
 export const AboutPage = () => {
   return (
     <Layout>
       <HeadDocumentTitle>About me</HeadDocumentTitle>
+      <HeadMetaDescription>
+        Information about Grzegorz Rozdzialik, the blog author.
+      </HeadMetaDescription>
 
       <StyledMainContent>
         <StyledAlwaysLeftColumn>

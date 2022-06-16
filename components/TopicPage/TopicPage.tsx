@@ -19,7 +19,7 @@ import {
   ErrorAlert,
   ErrorAlertContainer,
 } from "../ErrorAlert";
-import { HeadDocumentTitle } from "../HeadDocumentTitle";
+import { HeadDocumentTitle, HeadMetaDescription } from "../../seo";
 import { Layout } from "../Layout";
 
 interface TopicPageProps {
@@ -58,12 +58,19 @@ export const TopicPage = ({ topicName, articlesResult }: TopicPageProps) => {
         either.match(
           (error) => (
             <ErrorAlertContainer>
+              <HeadMetaDescription>
+                Articles about {topicName}.
+              </HeadMetaDescription>
               <ErrorAlert>Could not read topic index.</ErrorAlert>
               <DevOnlyErrorDetails error={error} />
             </ErrorAlertContainer>
           ),
-          ({ articles }) => (
+          ({ articles, description }) => (
             <>
+              <HeadMetaDescription>
+                Articles about {topicName}. {description}
+              </HeadMetaDescription>
+
               <StyledArticleCardsContainer>
                 {articles.map((article) => (
                   <IndexedArticleCard metadata={article} key={article.slug} />
