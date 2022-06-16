@@ -6,7 +6,6 @@ import { rem, spacing } from "../../styles/theme";
 import { articleTitleStyle } from "../../styles/typography";
 import { ArticleMeta } from "../ArticleMeta";
 import { getArticlePagePath } from "../ArticlePage/route";
-import { StyledArticleParagraph } from "../ArticlePage/styled-components";
 import { Button } from "../Button";
 
 interface ArticleCardProps extends ComponentProps<typeof ArticleMeta> {
@@ -36,7 +35,7 @@ export const ArticleCard = ({
       tagNames={tagNames}
     />
 
-    <StyledArticleCardSummary>{summary}</StyledArticleCardSummary>
+    <div>{summary}</div>
 
     <Link href={getArticlePagePath(slug)} passHref>
       <Button>Read more</Button>
@@ -52,9 +51,5 @@ const StyledArticleCardContainer = styled("div")(({ theme }) => ({
   gap: rem(spacing(1)),
   padding: rem(spacing(2)),
 }));
-
-const StyledArticleCardSummary = styled(StyledArticleParagraph)({
-  margin: 0,
-});
 
 const StyledArticleCardTitle = styled("h2")(articleTitleStyle, { margin: 0 });

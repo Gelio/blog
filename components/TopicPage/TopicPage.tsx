@@ -1,7 +1,9 @@
 import styled from "@emotion/styled";
 import { either } from "fp-ts";
 import { pipe } from "fp-ts/function";
-import { readTopicIndex } from "../../content-processing/indexes";
+import { MDXRemote, MDXRemoteSerializeResult } from "next-mdx-remote";
+import type { ReadTopicIndexError } from "../../content-processing/indexes";
+import { ContentMetadata } from "../../content-processing/indexes/utils";
 import {
   pageContentMarginTop,
   responsiveContainer,
@@ -10,6 +12,7 @@ import {
 import { rem, spacing } from "../../styles/theme";
 import { headingStyle } from "../../styles/typography";
 import { ArticleCard } from "../ArticleCard";
+import { StyledArticleParagraph } from "../ArticlePage/styled-components";
 import { Button } from "../Button";
 import {
   DevOnlyErrorDetails,
@@ -18,9 +21,15 @@ import {
 } from "../ErrorAlert";
 import { Layout } from "../Layout";
 
+type ContentMetadataWithSerializedSummary = Omit<ContentMetadata, "summary"> & {
+  summary: MDXRemoteSerializeResult;
+};
 interface TopicPageProps {
   topicName: string;
-  postsResult: Awaited<ReturnType<ReturnType<typeof readTopicIndex>>>;
+  postsResult: either.Either<
+    ReadTopicIndexError,
+    readonly ContentMetadataWithSerializedSummary[]
+  >;
 }
 
 export const TopicPage = ({ topicName, postsResult }: TopicPageProps) => {
@@ -50,16 +59,22 @@ export const TopicPage = ({ topicName, postsResult }: TopicPageProps) => {
           (posts) => (
             <>
               <StyledArticleCardsContainer>
-                {posts.map((post) => (
+                {posts.map((postMetadata) => (
                   <ArticleCard
-                    key={post.contentMetadata.slug}
-                    readingTimeMin={post.contentMetadata.readingTimeMin}
-                    createdDate={post.contentMetadata.date}
-                    tagNames={post.contentMetadata.tags}
-                    title={post.contentMetadata.title}
-                    slug={post.contentMetadata.slug}
-                    // TODO: handle newlines
-                    summary={post.contentMetadata.summary}
+                    key={postMetadata.slug}
+                    readingTimeMin={postMetadata.readingTimeMin}
+                    createdDate={postMetadata.date}
+                    tagNames={postMetadata.tags}
+                    title={postMetadata.title}
+                    slug={postMetadata.slug}
+                    summary={
+                      <MDXRemote
+                        {...postMetadata.summary}
+                        components={{
+                          p: StyledArticleCardSummary,
+                        }}
+                      />
+                    }
                   />
                 ))}
               </StyledArticleCardsContainer>
@@ -90,6 +105,9 @@ const StyledMainContent = styled("main")(
   responsiveContainerInlinePadding,
   pageContentMarginTop
 );
+const StyledArticleCardSummary = styled(StyledArticleParagraph)({
+  margin: 0,
+});
 
 const StyledPageTitle = styled("h1")(headingStyle, {
   marginBlock: 0,

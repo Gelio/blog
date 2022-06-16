@@ -1,5 +1,7 @@
-import { either } from "fp-ts";
+import { array, either, task, taskEither } from "fp-ts";
+import { flow, pipe } from "fp-ts/function";
 import { GetStaticProps } from "next";
+import { serialize } from "next-mdx-remote/serialize";
 import { ComponentProps } from "react";
 import { HomePage } from "../components/HomePage";
 import { readAllContentIndex } from "../content-processing/indexes";
@@ -28,9 +30,22 @@ export const getStaticProps: GetStaticProps<
     );
   }
 
+  const allPostsWithSerializedContentResult = await pipe(
+    taskEither.fromEither(allPostsResult),
+    taskEither.chainTaskK(
+      flow(
+        array.map((contentWithMetadata) => async () => ({
+          ...contentWithMetadata.contentMetadata,
+          summary: await serialize(contentWithMetadata.contentMetadata.summary),
+        })),
+        task.sequenceArray
+      )
+    )
+  )();
+
   return {
     props: {
-      allPostsResult,
+      allPostsResult: allPostsWithSerializedContentResult,
     },
   };
 };

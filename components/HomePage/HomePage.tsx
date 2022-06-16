@@ -1,8 +1,12 @@
 import styled from "@emotion/styled";
 import { either } from "fp-ts";
 import { pipe } from "fp-ts/function";
+import { MDXRemote, MDXRemoteSerializeResult } from "next-mdx-remote";
 
-import { readAllContentIndex } from "../../content-processing/indexes";
+import {
+  ContentMetadata,
+  IndexReadError,
+} from "../../content-processing/indexes/utils";
 import {
   pageContentMarginTop,
   responsiveContainer,
@@ -10,6 +14,7 @@ import {
 } from "../../styles/layout";
 import { rem, spacing } from "../../styles/theme";
 import { ArticleCard } from "../ArticleCard";
+import { StyledArticleParagraph } from "../ArticlePage";
 import {
   DevOnlyErrorDetails,
   ErrorAlert,
@@ -17,8 +22,14 @@ import {
 } from "../ErrorAlert";
 import { Layout } from "../Layout";
 
+type ContentMetadataWithSerializedSummary = Omit<ContentMetadata, "summary"> & {
+  summary: MDXRemoteSerializeResult;
+};
 interface HomePageProps {
-  allPostsResult: Awaited<ReturnType<typeof readAllContentIndex>>;
+  allPostsResult: either.Either<
+    IndexReadError,
+    readonly ContentMetadataWithSerializedSummary[]
+  >;
 }
 
 export const HomePage = ({ allPostsResult }: HomePageProps) => {
@@ -41,14 +52,20 @@ export const HomePage = ({ allPostsResult }: HomePageProps) => {
             <StyledArticleCardsContainer>
               {posts.map((post) => (
                 <ArticleCard
-                  key={post.contentMetadata.slug}
-                  readingTimeMin={post.contentMetadata.readingTimeMin}
-                  createdDate={post.contentMetadata.date}
-                  tagNames={post.contentMetadata.tags}
-                  title={post.contentMetadata.title}
-                  slug={post.contentMetadata.slug}
-                  // TODO: handle new lines
-                  summary={post.contentMetadata.summary}
+                  key={post.slug}
+                  readingTimeMin={post.readingTimeMin}
+                  createdDate={post.date}
+                  tagNames={post.tags}
+                  title={post.title}
+                  slug={post.slug}
+                  summary={
+                    <MDXRemote
+                      {...post.summary}
+                      components={{
+                        p: StyledArticleCardSummary,
+                      }}
+                    />
+                  }
                 />
               ))}
               {/* TODO: add pagination */}
@@ -65,6 +82,10 @@ const StyledMainContent = styled("main")(
   responsiveContainerInlinePadding,
   pageContentMarginTop
 );
+
+const StyledArticleCardSummary = styled(StyledArticleParagraph)({
+  margin: 0,
+});
 
 const StyledArticleCardsContainer = styled("div")(
   responsiveContainer,

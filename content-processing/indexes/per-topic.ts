@@ -102,6 +102,11 @@ const topicIndexSchema = z.array(contentWithMetadataSchema);
 
 export type TopicIndex = z.infer<typeof topicIndexSchema>;
 
+type ExtractLeftFromEither<T> = T extends either.Left<infer E> ? E : never;
+export type ReadTopicIndexError = ExtractLeftFromEither<
+  Awaited<ReturnType<ReturnType<typeof readTopicIndex>>>
+>;
+
 export const readTopicIndex = (topicName: string) =>
   pipe(
     taskEither.rightIO(getTopicIndexPath(topicName)),

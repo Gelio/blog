@@ -1,6 +1,7 @@
-import { either } from "fp-ts";
-import { pipe } from "fp-ts/function";
+import { array, either, task, taskEither } from "fp-ts";
+import { flow, pipe } from "fp-ts/function";
 import { GetStaticPaths, GetStaticProps } from "next";
+import { serialize } from "next-mdx-remote/serialize";
 import { ParsedUrlQuery } from "querystring";
 import { ComponentProps } from "react";
 import { TopicPage } from "../../components/TopicPage";
@@ -46,7 +47,18 @@ export const getStaticProps: GetStaticProps<
   }
 
   const { name: topicName } = context.params;
-  const topicIndexResult = await readTopicIndex(topicName)();
+  const topicIndexResult = await pipe(
+    readTopicIndex(topicName),
+    taskEither.chainTaskK(
+      flow(
+        array.map((contentWithMetadata) => async () => ({
+          ...contentWithMetadata.contentMetadata,
+          summary: await serialize(contentWithMetadata.contentMetadata.summary),
+        })),
+        task.sequenceArray
+      )
+    )
+  )();
 
   return {
     props: {
