@@ -1,9 +1,9 @@
-import { either, task, taskEither } from "fp-ts";
+import { either, taskEither } from "fp-ts";
 import { pipe } from "fp-ts/function";
 import { GetStaticPaths, GetStaticProps } from "next";
-import { serialize } from "next-mdx-remote/serialize";
 import { ParsedUrlQuery } from "querystring";
 import { ComponentProps } from "react";
+import { serializeSummaryInIndexedArticles } from "../../components/ArticleCard";
 import { TopicPage } from "../../components/TopicPage";
 import { reserializeIfError } from "../../content-processing/app-utils";
 import {
@@ -50,14 +50,7 @@ export const getStaticProps: GetStaticProps<
   const topicIndexResult = await pipe(
     readTopicIndex(topicName),
     taskEither.bindW("articlesWithSerializedSummary", ({ articles }) =>
-      pipe(
-        articles.map((articleMetadata) => async () => ({
-          ...articleMetadata,
-          summary: await serialize(articleMetadata.summary),
-        })),
-        task.sequenceArray,
-        taskEither.rightTask
-      )
+      pipe(serializeSummaryInIndexedArticles(articles), taskEither.rightTask)
     ),
     taskEither.map(({ description, articlesWithSerializedSummary }) => ({
       description,

@@ -1,9 +1,7 @@
 import styled from "@emotion/styled";
 import { either } from "fp-ts";
 import { pipe } from "fp-ts/function";
-import { MDXRemote, MDXRemoteSerializeResult } from "next-mdx-remote";
 import { ReadAllArticlesIndexError } from "../../content-processing/indexes";
-import { IndexedArticleMetadata } from "../../content-processing/indexes/schema";
 
 import {
   pageContentMarginTop,
@@ -11,8 +9,10 @@ import {
   responsiveContainerInlinePadding,
 } from "../../styles/layout";
 import { rem, spacing } from "../../styles/theme";
-import { ArticleCard } from "../ArticleCard";
-import { StyledArticleParagraph } from "../ArticlePage";
+import {
+  IndexedArticleMetadataWithSerializedSummary,
+  IndexedArticleCard,
+} from "../ArticleCard";
 import {
   DevOnlyErrorDetails,
   ErrorAlert,
@@ -20,16 +20,10 @@ import {
 } from "../ErrorAlert";
 import { Layout } from "../Layout";
 
-type ArticleMetadataWithSerializedSummary = Omit<
-  IndexedArticleMetadata,
-  "summary"
-> & {
-  summary: MDXRemoteSerializeResult;
-};
 interface HomePageProps {
   allArticlesResult: either.Either<
     ReadAllArticlesIndexError,
-    readonly ArticleMetadataWithSerializedSummary[]
+    readonly IndexedArticleMetadataWithSerializedSummary[]
   >;
 }
 
@@ -52,22 +46,7 @@ export const HomePage = ({ allArticlesResult }: HomePageProps) => {
           (articles) => (
             <StyledArticleCardsContainer>
               {articles.map((article) => (
-                <ArticleCard
-                  key={article.slug}
-                  readingTimeMin={article.readingTimeMin}
-                  createdDate={article.date}
-                  tagNames={article.tags}
-                  title={article.title}
-                  slug={article.slug}
-                  summary={
-                    <MDXRemote
-                      {...article.summary}
-                      components={{
-                        p: StyledArticleCardSummary,
-                      }}
-                    />
-                  }
-                />
+                <IndexedArticleCard metadata={article} key={article.slug} />
               ))}
               {/* TODO: add pagination */}
             </StyledArticleCardsContainer>
@@ -83,10 +62,6 @@ const StyledMainContent = styled("main")(
   responsiveContainerInlinePadding,
   pageContentMarginTop
 );
-
-const StyledArticleCardSummary = styled(StyledArticleParagraph)({
-  margin: 0,
-});
 
 const StyledArticleCardsContainer = styled("div")(
   responsiveContainer,

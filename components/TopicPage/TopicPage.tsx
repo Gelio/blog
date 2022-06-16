@@ -1,9 +1,7 @@
 import styled from "@emotion/styled";
 import { either } from "fp-ts";
 import { pipe } from "fp-ts/function";
-import { MDXRemote, MDXRemoteSerializeResult } from "next-mdx-remote";
 import type { ReadTopicIndexError } from "../../content-processing/indexes";
-import { IndexedArticleMetadata } from "../../content-processing/indexes/schema";
 import {
   pageContentMarginTop,
   responsiveContainer,
@@ -11,8 +9,10 @@ import {
 } from "../../styles/layout";
 import { rem, spacing } from "../../styles/theme";
 import { headingStyle } from "../../styles/typography";
-import { ArticleCard } from "../ArticleCard";
-import { StyledArticleParagraph } from "../ArticlePage/styled-components";
+import {
+  IndexedArticleMetadataWithSerializedSummary,
+  IndexedArticleCard,
+} from "../ArticleCard";
 import { Button } from "../Button";
 import {
   DevOnlyErrorDetails,
@@ -21,18 +21,12 @@ import {
 } from "../ErrorAlert";
 import { Layout } from "../Layout";
 
-type ArticleMetadataWithSerializedSummary = Omit<
-  IndexedArticleMetadata,
-  "summary"
-> & {
-  summary: MDXRemoteSerializeResult;
-};
 interface TopicPageProps {
   topicName: string;
   articlesResult: either.Either<
     ReadTopicIndexError,
     {
-      articles: readonly ArticleMetadataWithSerializedSummary[];
+      articles: readonly IndexedArticleMetadataWithSerializedSummary[];
       description: string;
     }
   >;
@@ -69,22 +63,7 @@ export const TopicPage = ({ topicName, articlesResult }: TopicPageProps) => {
             <>
               <StyledArticleCardsContainer>
                 {articles.map((article) => (
-                  <ArticleCard
-                    key={article.slug}
-                    readingTimeMin={article.readingTimeMin}
-                    createdDate={article.date}
-                    tagNames={article.tags}
-                    title={article.title}
-                    slug={article.slug}
-                    summary={
-                      <MDXRemote
-                        {...article.summary}
-                        components={{
-                          p: StyledArticleCardSummary,
-                        }}
-                      />
-                    }
-                  />
+                  <IndexedArticleCard metadata={article} key={article.slug} />
                 ))}
               </StyledArticleCardsContainer>
 
@@ -114,9 +93,6 @@ const StyledMainContent = styled("main")(
   responsiveContainerInlinePadding,
   pageContentMarginTop
 );
-const StyledArticleCardSummary = styled(StyledArticleParagraph)({
-  margin: 0,
-});
 
 const StyledPageTitle = styled("h1")(headingStyle, {
   marginBlock: 0,

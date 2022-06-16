@@ -1,8 +1,8 @@
-import { array, either, task, taskEither } from "fp-ts";
-import { flow, pipe } from "fp-ts/function";
+import { either, taskEither } from "fp-ts";
+import { pipe } from "fp-ts/function";
 import { GetStaticProps } from "next";
-import { serialize } from "next-mdx-remote/serialize";
 import { ComponentProps } from "react";
+import { serializeSummaryInIndexedArticles } from "../components/ArticleCard";
 import { HomePage } from "../components/HomePage";
 import { readAllArticlesIndex } from "../content-processing/indexes";
 
@@ -32,15 +32,7 @@ export const getStaticProps: GetStaticProps<
 
   const allArticlesWithSerializedContentResult = await pipe(
     taskEither.fromEither(allArticlesResult),
-    taskEither.chainTaskK(
-      flow(
-        array.map((articleMetadata) => async () => ({
-          ...articleMetadata,
-          summary: await serialize(articleMetadata.summary),
-        })),
-        task.sequenceArray
-      )
-    )
+    taskEither.chainTaskK(serializeSummaryInIndexedArticles)
   )();
 
   return {
