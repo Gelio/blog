@@ -39,9 +39,13 @@ const getArticleFilePaths = pipe(
   )
 );
 
-export interface ArticleWithMetadata {
-  articleFilePath: string;
-  articleMetadata: ArticleFrontMatter;
+/**
+ * Information about the article.
+ * Used during the index-creation process.
+ */
+export interface ParsedArticleWithMetadata {
+  filePath: string;
+  metadata: ParsedArticleFrontMatter;
 }
 
 export const parseArticleWithMetadata = pipe(
@@ -60,9 +64,9 @@ export const parseArticleWithMetadata = pipe(
         pipe(
           parseArticleMetadata(articleFilePath),
           taskEither.map(
-            (articleMetadata): ArticleWithMetadata => ({
-              articleMetadata,
-              articleFilePath,
+            (articleMetadata): ParsedArticleWithMetadata => ({
+              metadata: articleMetadata,
+              filePath: articleFilePath,
             })
           ),
           taskEither.mapLeft((error) => [error])
@@ -88,7 +92,7 @@ export const parseArticleWithMetadata = pipe(
       pipe(
         date.Ord,
         ord.contramap(
-          ({ articleMetadata }: ArticleWithMetadata) => articleMetadata.date
+          ({ metadata }: ParsedArticleWithMetadata) => metadata.date
         ),
         ord.reverse
       )
@@ -133,19 +137,18 @@ const articleFrontMatterSchema = z.object({
 
   summary: z.string().min(5),
 });
-type ArticleFrontMatter = z.infer<typeof articleFrontMatterSchema>;
+type ParsedArticleFrontMatter = z.infer<typeof articleFrontMatterSchema>;
 
 /**
- * Parsed article metadata.
- * This describes the metadata in the content-processing pipeline.
+ * This describes the metadata in the index-creation pipeline.
  */
-type ArticleMetadata = ArticleFrontMatter & {
+type ParsedArticleMetadata = ParsedArticleFrontMatter & {
   readingTimeMin: number;
 };
 
 const parseArticleMetadata = (
   articleFilePath: string
-): taskEither.TaskEither<ArticleMetadataParseError, ArticleMetadata> =>
+): taskEither.TaskEither<ArticleMetadataParseError, ParsedArticleMetadata> =>
   pipe(
     taskEither.tryCatch(
       () => readFile(articleFilePath, { encoding: "utf-8" }),
@@ -158,14 +161,14 @@ const parseArticleMetadata = (
       const { data, content } = grayMatter(articleContents);
 
       return pipe(
-        safeParseSchema(articleFrontMatterSchema, data),
+        safeParseSchema(articleFrontMatterSchema)(data),
         either.bimap(
           (error): ArticleMetadataParseError => ({
             type: "cannot-parse-frontmatter",
             readFrontMatter: data,
             error,
           }),
-          (parsedFrontMatter): ArticleMetadata => ({
+          (parsedFrontMatter): ParsedArticleMetadata => ({
             ...parsedFrontMatter,
             readingTimeMin: readingTime(content).minutes,
           })

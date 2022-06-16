@@ -19,21 +19,21 @@ import {
   ReadSlugReverseMappingError,
 } from "../../content-processing/indexes";
 import {
-  ArticleMetadata,
   FileReadError,
   safeReadFile,
 } from "../../content-processing/indexes/utils";
-import { MDXRemote } from "next-mdx-remote";
+import { MDXRemote, MDXRemoteSerializeResult } from "next-mdx-remote";
 import {
   DevOnlyErrorDetails,
   ErrorAlert,
   ErrorAlertContainer,
 } from "../../components/ErrorAlert";
-import { contentIncludeFileGlobs } from "../../content-processing/utils";
+import { IndexedArticleMetadata } from "../../content-processing/indexes/schema";
+import { contentIncludeFileGlobs } from "../../content-processing/app-utils";
 
 interface SourceWithMetadata {
-  mdxSource: any;
-  articleMetadata: ArticleMetadata;
+  mdxSource: MDXRemoteSerializeResult;
+  articleMetadata: IndexedArticleMetadata;
 }
 
 interface ArticlePageProps {
@@ -139,35 +139,33 @@ export const getStaticProps: GetStaticProps<
       return either.right(articleWithMetadata);
     }),
     taskEither.bindTo("articleWithMetadata"),
-    taskEither.bindW(
-      "mdxSource",
-      ({ articleWithMetadata: { articleFilePath } }) =>
-        pipe(
-          safeReadFile(articleFilePath),
-          taskEither.mapLeft(
-            (error) =>
-              ({
-                type: "article-read-error",
-                error,
-              } as const)
-          ),
-          taskEither.chainTaskK(
-            (source) => () => serialize(source, { parseFrontmatter: true })
-          ),
-          taskEither.map((mdxSource) => {
-            // NOTE: delete frontmatter since it cannot be serialized by Next in SSR.
-            // Frontmatter is already available via `articleMetadata`
-            delete mdxSource["frontmatter"];
-            return mdxSource;
-          })
-        )
+    taskEither.bindW("mdxSource", ({ articleWithMetadata: { filePath } }) =>
+      pipe(
+        safeReadFile(filePath),
+        taskEither.mapLeft(
+          (error) =>
+            ({
+              type: "article-read-error",
+              error,
+            } as const)
+        ),
+        taskEither.chainTaskK(
+          (source) => () => serialize(source, { parseFrontmatter: true })
+        ),
+        taskEither.map((mdxSource) => {
+          // NOTE: delete frontmatter since it cannot be serialized by Next in SSR.
+          // Frontmatter is already available via `articleMetadata`
+          delete mdxSource["frontmatter"];
+          return mdxSource;
+        })
+      )
     ),
     taskEither.map(
       ({
-        articleWithMetadata: { articleMetadata },
+        articleWithMetadata: { metadata },
         mdxSource,
       }): SourceWithMetadata => ({
-        articleMetadata,
+        articleMetadata: metadata,
         mdxSource,
       })
     )

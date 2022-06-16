@@ -2,7 +2,6 @@ import { either, io, taskEither } from "fp-ts";
 import { pipe } from "fp-ts/function";
 import path from "path";
 import fs from "fs/promises";
-import { z } from "zod";
 
 export const getRepositoryRootDirectoryPath: io.IO<string> = () =>
   // NOTE: assume the scripts will always be invoked from the Next application root
@@ -115,21 +114,3 @@ export const safeReadIndex = (filePath: string) =>
       })
     )
   );
-
-export const articleMetadataSchema = z.object({
-  title: z.string(),
-  date: z.string(),
-  tags: z.array(z.string()),
-  slug: z.string(),
-  readingTimeMin: z.number(),
-  summary: z.string(),
-});
-export type ArticleMetadata = z.infer<typeof articleMetadataSchema>;
-
-export const articleWithMetadataSchema = z.object({
-  /** Relative path from the repository root to the article */
-  articleFilePath: z.string(),
-  articleMetadata: articleMetadataSchema,
-});
-
-export type ArticleWithMetadata = z.infer<typeof articleWithMetadataSchema>;

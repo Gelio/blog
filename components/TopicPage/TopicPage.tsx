@@ -3,7 +3,7 @@ import { either } from "fp-ts";
 import { pipe } from "fp-ts/function";
 import { MDXRemote, MDXRemoteSerializeResult } from "next-mdx-remote";
 import type { ReadTopicIndexError } from "../../content-processing/indexes";
-import { ArticleMetadata } from "../../content-processing/indexes/utils";
+import { IndexedArticleMetadata } from "../../content-processing/indexes/schema";
 import {
   pageContentMarginTop,
   responsiveContainer,
@@ -21,7 +21,10 @@ import {
 } from "../ErrorAlert";
 import { Layout } from "../Layout";
 
-type ArticleMetadataWithSerializedSummary = Omit<ArticleMetadata, "summary"> & {
+type ArticleMetadataWithSerializedSummary = Omit<
+  IndexedArticleMetadata,
+  "summary"
+> & {
   summary: MDXRemoteSerializeResult;
 };
 interface TopicPageProps {

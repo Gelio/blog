@@ -14,7 +14,7 @@ export default HomePage;
  * Exceeding this number should push me to add pagination to the index page and
  * the topic pages.
  */
-const maxPosts = 30;
+const maxArticles = 30;
 
 export const getStaticProps: GetStaticProps<
   ComponentProps<typeof HomePage>
@@ -23,10 +23,10 @@ export const getStaticProps: GetStaticProps<
 
   if (
     either.isRight(allArticlesResult) &&
-    allArticlesResult.right.length >= maxPosts
+    allArticlesResult.right.length >= maxArticles
   ) {
     throw new Error(
-      `Max number of posts (${maxPosts}) exceeded. There are ${allArticlesResult.right.length} posts. It is time to add pagination`
+      `Max number of articles (${maxArticles}) exceeded. There are ${allArticlesResult.right.length} articles. It is time to add pagination`
     );
   }
 
@@ -34,7 +34,7 @@ export const getStaticProps: GetStaticProps<
     taskEither.fromEither(allArticlesResult),
     taskEither.chainTaskK(
       flow(
-        array.map(({ articleMetadata }) => async () => ({
+        array.map((articleMetadata) => async () => ({
           ...articleMetadata,
           summary: await serialize(articleMetadata.summary),
         })),
@@ -45,7 +45,7 @@ export const getStaticProps: GetStaticProps<
 
   return {
     props: {
-      allPostsResult: allArticlesWithSerializedContentResult,
+      allArticlesResult: allArticlesWithSerializedContentResult,
     },
   };
 };

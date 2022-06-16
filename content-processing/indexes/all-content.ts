@@ -1,6 +1,10 @@
 import { taskEither } from "fp-ts";
 import { flow, pipe } from "fp-ts/function";
-import { ArticleWithMetadata } from "../parse-articles";
+import { z } from "zod";
+import { ExtractLeftFromEither, ExtractResultFromTask } from "../../lib/fp-ts";
+import { ParsedArticleWithMetadata } from "../parse-articles";
+import { safeParseSchema } from "../utils";
+import { indexedArticleMetadataSchema } from "./schema";
 import {
   ensureParentDirectoryExists,
   getIndexFilePath,
@@ -11,7 +15,7 @@ import {
 const allArticlesIndexName = "all-articles.json";
 
 export const createAllArticlesIndex = (
-  articlesWithMetadata: readonly ArticleWithMetadata[]
+  articlesWithMetadata: readonly ParsedArticleWithMetadata[]
 ) =>
   pipe(
     taskEither.rightIO(getIndexFilePath(allArticlesIndexName)),
@@ -28,12 +32,21 @@ export const createAllArticlesIndex = (
       )
     ),
     taskEither.chainW((indexFilePath) =>
-      safeWriteIndex(indexFilePath, articlesWithMetadata)
+      safeWriteIndex(
+        indexFilePath,
+        articlesWithMetadata.map(({ metadata }) => metadata)
+      )
     )
   );
+
+const allArticlesIndexSchema = z.array(indexedArticleMetadataSchema);
+
+export type ReadAllArticlesIndexError = ExtractLeftFromEither<
+  ExtractResultFromTask<typeof readAllArticlesIndex>
+>;
 
 export const readAllArticlesIndex = pipe(
   taskEither.rightIO(getIndexFilePath(allArticlesIndexName)),
   taskEither.chainW(safeReadIndex),
-  taskEither.map((data) => data as import("./utils").ArticleWithMetadata[])
+  taskEither.chainEitherKW(safeParseSchema(allArticlesIndexSchema))
 );

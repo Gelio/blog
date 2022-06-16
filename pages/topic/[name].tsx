@@ -5,11 +5,11 @@ import { serialize } from "next-mdx-remote/serialize";
 import { ParsedUrlQuery } from "querystring";
 import { ComponentProps } from "react";
 import { TopicPage } from "../../components/TopicPage";
+import { reserializeIfError } from "../../content-processing/app-utils";
 import {
   readTopicIndex,
   readTopicsSummaryIndex,
 } from "../../content-processing/indexes";
-import { reserializeIfError } from "../../content-processing/utils";
 
 export default TopicPage;
 
@@ -51,7 +51,7 @@ export const getStaticProps: GetStaticProps<
     readTopicIndex(topicName),
     taskEither.chainTaskK(
       flow(
-        array.map(({ articleMetadata }) => async () => ({
+        array.map((articleMetadata) => async () => ({
           ...articleMetadata,
           summary: await serialize(articleMetadata.summary),
         })),
