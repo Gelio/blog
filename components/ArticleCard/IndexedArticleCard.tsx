@@ -4,7 +4,7 @@ import { pipe } from "fp-ts/function";
 import { MDXRemote, MDXRemoteSerializeResult } from "next-mdx-remote";
 import { serialize } from "next-mdx-remote/serialize";
 import { IndexedArticleMetadata } from "../../content-processing/indexes/schema";
-import { StyledArticleParagraph } from "../ArticlePage";
+import { StyledArticleParagraph } from "../ArticlePage/styled-components";
 import { ArticleCard } from "./ArticleCard";
 
 export type IndexedArticleMetadataWithSerializedSummary = Omit<
