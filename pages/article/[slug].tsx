@@ -31,10 +31,18 @@ import {
 import { IndexedArticleMetadata } from "../../content-processing/indexes/schema";
 import { contentIncludeFileGlobs } from "../../content-processing/app-utils";
 import { HeadDocumentTitle, HeadMetaDescription } from "../../seo";
+import stripMarkdown from "strip-markdown";
+import { remark } from "remark";
 
 interface SourceWithMetadata {
   mdxSource: MDXRemoteSerializeResult;
   articleMetadata: IndexedArticleMetadata;
+
+  /**
+   * Article summary with all Markdown syntax stripped.
+   * Based on the original summary in `articleMetadata`.
+   */
+  rawArticleSummary: string;
 }
 
 interface ArticlePageProps {
@@ -43,7 +51,8 @@ interface ArticlePageProps {
     | {
         type: "article-read-error";
         error: FileReadError;
-      },
+      }
+    | StripMarkdownError,
     SourceWithMetadata
   >;
 }
@@ -62,13 +71,10 @@ const ArticlePage = ({ sourceWithMetadataResult }: ArticlePageProps) => {
                 <DevOnlyErrorDetails error={error} />
               </ErrorAlertContainer>
             ),
-            ({ articleMetadata, mdxSource }) => (
+            ({ articleMetadata, mdxSource, rawArticleSummary }) => (
               <>
                 <HeadDocumentTitle>{articleMetadata.title}</HeadDocumentTitle>
-                <HeadMetaDescription>
-                  {/* TODO: strip markdown from summary */}
-                  {articleMetadata.summary}
-                </HeadMetaDescription>
+                <HeadMetaDescription>{rawArticleSummary}</HeadMetaDescription>
 
                 <ArticleHeader
                   title={articleMetadata.title}
@@ -168,13 +174,23 @@ export const getStaticProps: GetStaticProps<
         })
       )
     ),
+    taskEither.bindW(
+      "rawArticleSummary",
+      ({
+        articleWithMetadata: {
+          metadata: { summary },
+        },
+      }) => stripMarkdownFromString(summary)
+    ),
     taskEither.map(
       ({
         articleWithMetadata: { metadata },
         mdxSource,
+        rawArticleSummary,
       }): SourceWithMetadata => ({
         articleMetadata: metadata,
         mdxSource,
+        rawArticleSummary,
       })
     )
   )();
@@ -202,6 +218,31 @@ export const getStaticProps: GetStaticProps<
     },
   };
 };
+
+interface StripMarkdownError {
+  type: "strip-markdown-error";
+  error: unknown;
+}
+
+const stripMarkdownFromString =
+  (value: string): taskEither.TaskEither<StripMarkdownError, string> =>
+  () =>
+    new Promise((resolve) =>
+      remark()
+        .use(stripMarkdown)
+        .process(value)
+        .then((strippedMarkdown) =>
+          resolve(either.right(strippedMarkdown.toString()))
+        )
+        .catch((error) =>
+          resolve(
+            either.left<StripMarkdownError>({
+              type: "strip-markdown-error",
+              error,
+            })
+          )
+        )
+    );
 
 export const config: PageConfig = {
   unstable_includeFiles: contentIncludeFileGlobs,
