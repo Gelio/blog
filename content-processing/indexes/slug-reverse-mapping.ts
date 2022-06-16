@@ -1,10 +1,10 @@
 import { either, taskEither } from "fp-ts";
-import { pipe } from "fp-ts/function";
+import { flow, pipe } from "fp-ts/function";
 import { z } from "zod";
-import { ContentWithMetadata } from "../parse-content";
+import { ParsedArticleWithMetadata } from "../parse-articles";
 import { safeParseSchema } from "../utils";
+import { indexedArticleMetadataSchema } from "./schema";
 import {
-  contentWithMetadataSchema,
   ensureParentDirectoryExists,
   getIndexFilePath,
   IndexReadError,
@@ -13,7 +13,7 @@ import {
 } from "./utils";
 
 /** Keys are slugs */
-type SlugReverseMappingOutput = Record<string, ContentWithMetadata>;
+type DeserializedSlugReverseMapping = Record<string, ParsedArticleWithMetadata>;
 
 const slugReverseMappingIndexName = "slug-reverse-mapping.json";
 
@@ -23,7 +23,7 @@ interface DuplicateSlugError {
 }
 
 export const createSlugReverseMappingIndex = (
-  contentWithMetadata: readonly ContentWithMetadata[]
+  articlesWithMetadata: readonly ParsedArticleWithMetadata[]
 ) =>
   pipe(
     taskEither.rightIO(getIndexFilePath(slugReverseMappingIndexName)),
@@ -43,33 +43,36 @@ export const createSlugReverseMappingIndex = (
     taskEither.apSW(
       "slugReverseMapping",
       taskEither.fromEither(
-        ((): either.Either<DuplicateSlugError[], SlugReverseMappingOutput> => {
+        ((): either.Either<
+          DuplicateSlugError[],
+          DeserializedSlugReverseMapping
+        > => {
           const slugReverseMappingWithDuplicates: Record<
             string,
-            ContentWithMetadata[]
+            ParsedArticleWithMetadata[]
           > = {};
 
-          contentWithMetadata.forEach((content) => {
-            const { slug } = content.contentMetadata;
+          articlesWithMetadata.forEach((articleWithMetadata) => {
+            const { slug } = articleWithMetadata.metadata;
             const sameSlugArray = slugReverseMappingWithDuplicates[slug];
             if (sameSlugArray) {
-              sameSlugArray.push(content);
+              sameSlugArray.push(articleWithMetadata);
             } else {
-              slugReverseMappingWithDuplicates[slug] = [content];
+              slugReverseMappingWithDuplicates[slug] = [articleWithMetadata];
             }
           });
 
           const duplicateErrors: DuplicateSlugError[] = [];
-          const slugReverseMapping: SlugReverseMappingOutput = {};
+          const slugReverseMapping: DeserializedSlugReverseMapping = {};
 
           Object.entries(slugReverseMappingWithDuplicates).forEach(
-            ([slug, contents]) => {
-              if (contents.length === 1) {
-                slugReverseMapping[slug] = contents[0]!;
+            ([slug, articlesForSlug]) => {
+              if (articlesForSlug.length === 1) {
+                slugReverseMapping[slug] = articlesForSlug[0]!;
               } else {
                 duplicateErrors.push({
                   slug,
-                  filePaths: contents.map((content) => content.contentFilePath),
+                  filePaths: articlesForSlug.map(({ filePath }) => filePath),
                 });
               }
             }
@@ -98,13 +101,15 @@ export const createSlugReverseMappingIndex = (
     )
   );
 
+const indexedArticleWithMetadataSchema = z.object({
+  filePath: z.string(),
+  metadata: indexedArticleMetadataSchema,
+});
+
 const slugReverseMappingSchema = z.record(
   z.string(),
-  contentWithMetadataSchema
+  indexedArticleWithMetadataSchema
 );
-
-/** Keys are slugs */
-export type SlugReverseMapping = z.infer<typeof slugReverseMappingSchema>;
 
 export type ReadSlugReverseMappingError =
   | IndexReadError
@@ -116,9 +121,9 @@ export type ReadSlugReverseMappingError =
 export const readSlugReverseMapping = pipe(
   taskEither.rightIO(getIndexFilePath(slugReverseMappingIndexName)),
   taskEither.chainW(safeReadIndex),
-  taskEither.chainEitherKW((rawSlugReverseMapping) =>
-    pipe(
-      safeParseSchema(slugReverseMappingSchema, rawSlugReverseMapping),
+  taskEither.chainEitherKW(
+    flow(
+      safeParseSchema(slugReverseMappingSchema),
       either.mapLeft(
         (error): ReadSlugReverseMappingError =>
           ({

@@ -1,9 +1,9 @@
 import { GetStaticProps } from "next";
 import { ComponentProps } from "react";
 import { TopicsPage } from "../components/TopicsPage";
+import { reserializeIfError } from "../content-processing/app-utils";
 
 import { readTopicsSummaryIndex } from "../content-processing/indexes/per-topic";
-import { reserializeIfError } from "../content-processing/utils";
 
 export default TopicsPage;
 

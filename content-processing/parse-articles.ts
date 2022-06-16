@@ -9,21 +9,22 @@ import { safeParseSchema } from "./utils";
 import { getRepositoryRootDirectoryPath } from "./indexes/utils";
 import path from "path";
 
-const contentGlob = "content/**/*.mdx";
+/** Relative to the root of the reposiotry */
+const articlesGlob = "content/articles/**/*.mdx";
 
-const getContentFilePaths = pipe(
+const getArticleFilePaths = pipe(
   taskEither.Do,
   taskEither.apS(
     "repositoryDirectoryPath",
     taskEither.rightIO(getRepositoryRootDirectoryPath)
   ),
   taskEither.bindW(
-    "contentFilePaths",
+    "articlePaths",
     ({ repositoryDirectoryPath }) =>
       () =>
         new Promise<either.Either<Error, string[]>>((resolve) => {
           glob(
-            contentGlob,
+            articlesGlob,
             { cwd: repositoryDirectoryPath, absolute: true },
             (error, matches) => {
               resolve(error ? either.left(error) : either.right(matches));
@@ -31,20 +32,24 @@ const getContentFilePaths = pipe(
           );
         })
   ),
-  taskEither.map(({ contentFilePaths, repositoryDirectoryPath }) =>
-    contentFilePaths.map((filePath) =>
+  taskEither.map(({ articlePaths, repositoryDirectoryPath }) =>
+    articlePaths.map((filePath) =>
       path.relative(repositoryDirectoryPath, filePath)
     )
   )
 );
 
-export interface ContentWithMetadata {
-  contentFilePath: string;
-  contentMetadata: ContentFrontMatter;
+/**
+ * Information about the article.
+ * Used during the index-creation process.
+ */
+export interface ParsedArticleWithMetadata {
+  filePath: string;
+  metadata: ParsedArticleFrontMatter;
 }
 
-export const parseContentWithMetadata = pipe(
-  getContentFilePaths,
+export const parseArticleWithMetadata = pipe(
+  getArticleFilePaths,
   taskEither.mapLeft(
     (error) =>
       ({
@@ -52,29 +57,31 @@ export const parseContentWithMetadata = pipe(
         error,
       } as const)
   ),
-  taskEither.chainW((contentFilePaths) =>
+  taskEither.chainW((articleFilePaths) =>
     pipe(
-      contentFilePaths,
-      readonlyArray.map((contentFilePath) =>
+      articleFilePaths,
+      readonlyArray.map((articleFilePath) =>
         pipe(
-          parseContentMetadata(contentFilePath),
-          taskEither.map((contentMetadata) => ({
-            contentMetadata,
-            contentFilePath,
-          })),
+          parseArticleMetadata(articleFilePath),
+          taskEither.map(
+            (articleMetadata): ParsedArticleWithMetadata => ({
+              metadata: articleMetadata,
+              filePath: articleFilePath,
+            })
+          ),
           taskEither.mapLeft((error) => [error])
         )
       ),
       readonlyArray.sequence(
         taskEither.getApplicativeTaskValidation(
           task.ApplyPar,
-          readonlyArray.getSemigroup<ContentMetadataParseError>()
+          readonlyArray.getSemigroup<ArticleMetadataParseError>()
         )
       ),
       taskEither.mapLeft(
         (errors) =>
           ({
-            type: "cannot-parse-content",
+            type: "cannot-parse-article",
             errors,
           } as const)
       )
@@ -85,8 +92,7 @@ export const parseContentWithMetadata = pipe(
       pipe(
         date.Ord,
         ord.contramap(
-          (contentWithMetadata: ContentWithMetadata) =>
-            contentWithMetadata.contentMetadata.date
+          ({ metadata }: ParsedArticleWithMetadata) => metadata.date
         ),
         ord.reverse
       )
@@ -94,7 +100,7 @@ export const parseContentWithMetadata = pipe(
   )
 );
 
-type ContentMetadataParseError =
+type ArticleMetadataParseError =
   | {
       type: "cannot-read-file";
       error: Error;
@@ -102,10 +108,10 @@ type ContentMetadataParseError =
   | {
       type: "cannot-parse-frontmatter";
       readFrontMatter: Record<string, unknown>;
-      error: z.ZodError<z.input<typeof contentFrontMatterSchema>>;
+      error: z.ZodError<z.input<typeof articleFrontMatterSchema>>;
     };
 
-const contentFrontMatterSchema = z.object({
+const articleFrontMatterSchema = z.object({
   title: z.string().min(1),
 
   date: z
@@ -131,39 +137,38 @@ const contentFrontMatterSchema = z.object({
 
   summary: z.string().min(5),
 });
-type ContentFrontMatter = z.infer<typeof contentFrontMatterSchema>;
+type ParsedArticleFrontMatter = z.infer<typeof articleFrontMatterSchema>;
 
 /**
- * Parsed content metadata.
- * This describes the metadata in the content-processing pipeline.
+ * This describes the metadata in the index-creation pipeline.
  */
-type ContentMetadata = ContentFrontMatter & {
+type ParsedArticleMetadata = ParsedArticleFrontMatter & {
   readingTimeMin: number;
 };
 
-const parseContentMetadata = (
-  contentFilePath: string
-): taskEither.TaskEither<ContentMetadataParseError, ContentMetadata> =>
+const parseArticleMetadata = (
+  articleFilePath: string
+): taskEither.TaskEither<ArticleMetadataParseError, ParsedArticleMetadata> =>
   pipe(
     taskEither.tryCatch(
-      () => readFile(contentFilePath, { encoding: "utf-8" }),
-      (error): ContentMetadataParseError => ({
+      () => readFile(articleFilePath, { encoding: "utf-8" }),
+      (error): ArticleMetadataParseError => ({
         type: "cannot-read-file",
         error: error as Error,
       })
     ),
-    taskEither.chainEitherK((contents) => {
-      const { data, content } = grayMatter(contents);
+    taskEither.chainEitherK((articleContents) => {
+      const { data, content } = grayMatter(articleContents);
 
       return pipe(
-        safeParseSchema(contentFrontMatterSchema, data),
+        safeParseSchema(articleFrontMatterSchema)(data),
         either.bimap(
-          (error): ContentMetadataParseError => ({
+          (error): ArticleMetadataParseError => ({
             type: "cannot-parse-frontmatter",
             readFrontMatter: data,
             error,
           }),
-          (parsedFrontMatter): ContentMetadata => ({
+          (parsedFrontMatter): ParsedArticleMetadata => ({
             ...parsedFrontMatter,
             readingTimeMin: readingTime(content).minutes,
           })

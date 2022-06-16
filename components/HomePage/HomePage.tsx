@@ -2,11 +2,9 @@ import styled from "@emotion/styled";
 import { either } from "fp-ts";
 import { pipe } from "fp-ts/function";
 import { MDXRemote, MDXRemoteSerializeResult } from "next-mdx-remote";
+import { ReadAllArticlesIndexError } from "../../content-processing/indexes";
+import { IndexedArticleMetadata } from "../../content-processing/indexes/schema";
 
-import {
-  ContentMetadata,
-  IndexReadError,
-} from "../../content-processing/indexes/utils";
 import {
   pageContentMarginTop,
   responsiveContainer,
@@ -22,17 +20,20 @@ import {
 } from "../ErrorAlert";
 import { Layout } from "../Layout";
 
-type ContentMetadataWithSerializedSummary = Omit<ContentMetadata, "summary"> & {
+type ArticleMetadataWithSerializedSummary = Omit<
+  IndexedArticleMetadata,
+  "summary"
+> & {
   summary: MDXRemoteSerializeResult;
 };
 interface HomePageProps {
-  allPostsResult: either.Either<
-    IndexReadError,
-    readonly ContentMetadataWithSerializedSummary[]
+  allArticlesResult: either.Either<
+    ReadAllArticlesIndexError,
+    readonly ArticleMetadataWithSerializedSummary[]
   >;
 }
 
-export const HomePage = ({ allPostsResult }: HomePageProps) => {
+export const HomePage = ({ allArticlesResult }: HomePageProps) => {
   return (
     <Layout>
       <StyledMainContent>
@@ -40,7 +41,7 @@ export const HomePage = ({ allPostsResult }: HomePageProps) => {
       </StyledMainContent>
 
       {pipe(
-        allPostsResult,
+        allArticlesResult,
         either.match(
           (error) => (
             <ErrorAlertContainer>
@@ -48,19 +49,19 @@ export const HomePage = ({ allPostsResult }: HomePageProps) => {
               <DevOnlyErrorDetails error={error} />
             </ErrorAlertContainer>
           ),
-          (posts) => (
+          (articles) => (
             <StyledArticleCardsContainer>
-              {posts.map((post) => (
+              {articles.map((article) => (
                 <ArticleCard
-                  key={post.slug}
-                  readingTimeMin={post.readingTimeMin}
-                  createdDate={post.date}
-                  tagNames={post.tags}
-                  title={post.title}
-                  slug={post.slug}
+                  key={article.slug}
+                  readingTimeMin={article.readingTimeMin}
+                  createdDate={article.date}
+                  tagNames={article.tags}
+                  title={article.title}
+                  slug={article.slug}
                   summary={
                     <MDXRemote
-                      {...post.summary}
+                      {...article.summary}
                       components={{
                         p: StyledArticleCardSummary,
                       }}

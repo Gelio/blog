@@ -1,14 +1,16 @@
-import { array, either, string, task, taskEither } from "fp-ts";
-import { pipe } from "fp-ts/function";
+import { array, either, io, string, task, taskEither } from "fp-ts";
+import { flow, pipe } from "fp-ts/function";
 import path from "path";
 import { z } from "zod";
-import { ContentWithMetadata } from "../parse-content";
+import { ExtractLeftFromEither, ExtractResultFromTask } from "../../lib/fp-ts";
+import type { ParsedArticleWithMetadata } from "../parse-articles";
 import { safeParseSchema } from "../utils";
+import { indexedArticleMetadataSchema } from "./schema";
 import {
-  contentWithMetadataSchema,
   ensureParentDirectoryExists,
-  FileWriteError,
   getIndexFilePath,
+  getRepositoryRootDirectoryPath,
+  safeReadFile,
   safeReadIndex,
   safeWriteIndex,
 } from "./utils";
@@ -16,43 +18,44 @@ import {
 const topicsIndexesDirectoryName = "topics";
 const topicsIndexFileName = "topics.json";
 
-// TODO: add topic descriptions to indexes
+/** Keys are topic names */
+type TopicsWithParsedArticlesMap = Map<string, ParsedArticleWithMetadata[]>;
 
-type TopicsWithContentMap = Map<string, ContentWithMetadata[]>;
+const getTopicsWithParsedArticlesMap = (
+  articlesWithMetadata: readonly ParsedArticleWithMetadata[]
+) => {
+  const topicsWithArticlesMap: TopicsWithParsedArticlesMap = new Map();
 
-export const createTopicIndexes = (
-  contentWithMetadata: readonly ContentWithMetadata[]
-) =>
-  pipe(
-    taskEither.rightIO(() => {
-      const topicsWithContentMap: TopicsWithContentMap = new Map();
+  articlesWithMetadata.forEach((articleWithMetadata) => {
+    articleWithMetadata.metadata.tags.forEach((topic) => {
+      const articlesForTopic = topicsWithArticlesMap.get(topic);
+      if (articlesForTopic) {
+        articlesForTopic.push(articleWithMetadata);
+      } else {
+        topicsWithArticlesMap.set(topic, [articleWithMetadata]);
+      }
+    });
+  });
 
-      contentWithMetadata.forEach((singleContentWithMetadata) => {
-        singleContentWithMetadata.contentMetadata.tags.forEach((tag) => {
-          const contentForTopic = topicsWithContentMap.get(tag);
-          if (contentForTopic) {
-            contentForTopic.push(singleContentWithMetadata);
-          } else {
-            topicsWithContentMap.set(tag, [singleContentWithMetadata]);
-          }
-        });
-      });
+  return topicsWithArticlesMap;
+};
 
-      return topicsWithContentMap;
-    }),
-    taskEither.chainW((topicsWithContentMap) =>
-      pipe(
-        createPerTopicIndexes(topicsWithContentMap),
-        taskEither.apFirstW(createTopicsSummary(topicsWithContentMap))
-      )
+export const createTopicIndexes = flow(
+  getTopicsWithParsedArticlesMap,
+  (topicsWithArticleMap) =>
+    pipe(
+      createPerTopicIndexes(topicsWithArticleMap),
+      taskEither.apFirstW(createTopicsSummary(topicsWithArticleMap))
     ),
-    taskEither.map(() => undefined)
-  );
+  taskEither.map(() => undefined)
+);
 
 const getTopicIndexPath = (topicName: string) =>
   getIndexFilePath(path.join(topicsIndexesDirectoryName, `${topicName}.json`));
 
-const createPerTopicIndexes = (topicsWithContentMap: TopicsWithContentMap) =>
+const createPerTopicIndexes = (
+  topicsWithArticlesMap: TopicsWithParsedArticlesMap
+) =>
   pipe(
     taskEither.rightIO(getTopicIndexPath("any")),
     taskEither.chainW(ensureParentDirectoryExists),
@@ -65,27 +68,62 @@ const createPerTopicIndexes = (topicsWithContentMap: TopicsWithContentMap) =>
     ),
     taskEither.chainW(() =>
       pipe(
-        Array.from(topicsWithContentMap.entries()).map(([topic, contents]) =>
-          pipe(
-            taskEither.rightIO(getTopicIndexPath(topic)),
-            taskEither.chain((indexFilePath) =>
-              safeWriteIndex(indexFilePath, contents)
-            ),
-            taskEither.mapLeft((error): [TopicIndexWriteError] => [
-              {
-                type: "cannot-write-topic-index",
-                topic,
-                error,
-              },
-            ])
-          )
+        Array.from(topicsWithArticlesMap.entries()).map(
+          ([topicName, articles]) =>
+            pipe(
+              taskEither.Do,
+              taskEither.apSW(
+                "description",
+                pipe(
+                  getTopicDescription(topicName),
+                  taskEither.mapLeft(
+                    (error) =>
+                      ({
+                        type: "cannot-read-topic-description",
+                        topic: topicName,
+                        error,
+                      } as const)
+                  )
+                )
+              ),
+              taskEither.apS(
+                "indexFilePath",
+                taskEither.rightIO(getTopicIndexPath(topicName))
+              ),
+              taskEither.chainW(({ indexFilePath, description }) =>
+                pipe(
+                  safeWriteIndex(indexFilePath, {
+                    articles: articles.map(({ metadata }) => metadata),
+                    description,
+                  }),
+                  taskEither.mapLeft(
+                    (error) =>
+                      ({
+                        type: "cannot-write-topic-index",
+                        topic: topicName,
+                        error,
+                      } as const)
+                  )
+                )
+              )
+            )
         ),
-        array.sequence(
-          taskEither.getApplicativeTaskValidation(
-            task.ApplyPar,
-            array.getSemigroup<TopicIndexWriteError>()
-          )
-        ),
+        (tasks) => {
+          type TopicProcessingError = ExtractLeftFromEither<
+            ExtractResultFromTask<typeof tasks[number]>
+          >;
+
+          return pipe(
+            tasks,
+            array.map(taskEither.mapLeft((error) => [error])),
+            array.sequence(
+              taskEither.getApplicativeTaskValidation(
+                task.ApplyPar,
+                array.getSemigroup<TopicProcessingError>()
+              )
+            )
+          );
+        },
         taskEither.bimap(
           (errors) =>
             ({
@@ -98,22 +136,39 @@ const createPerTopicIndexes = (topicsWithContentMap: TopicsWithContentMap) =>
     )
   );
 
-const topicIndexSchema = z.array(contentWithMetadataSchema);
+const getTopicDescription = (topicName: string) =>
+  pipe(
+    getRepositoryRootDirectoryPath,
+    io.map((repositoryRootDirectoryPath) =>
+      path.join(
+        repositoryRootDirectoryPath,
+        "content",
+        "topics",
+        // NOTE: no support for Markdown in topic summaries
+        `${topicName}.txt`
+      )
+    ),
+    taskEither.rightIO,
+    taskEither.chainW(safeReadFile)
+  );
 
+const topicIndexSchema = z.object({
+  articles: z.array(indexedArticleMetadataSchema),
+  description: z.string(),
+});
 export type TopicIndex = z.infer<typeof topicIndexSchema>;
 
-type ExtractLeftFromEither<T> = T extends either.Left<infer E> ? E : never;
 export type ReadTopicIndexError = ExtractLeftFromEither<
-  Awaited<ReturnType<ReturnType<typeof readTopicIndex>>>
+  ExtractResultFromTask<ReturnType<typeof readTopicIndex>>
 >;
 
 export const readTopicIndex = (topicName: string) =>
   pipe(
     taskEither.rightIO(getTopicIndexPath(topicName)),
     taskEither.chainW(safeReadIndex),
-    taskEither.chainEitherKW((rawTopicIndex) =>
-      pipe(
-        safeParseSchema(topicIndexSchema, rawTopicIndex),
+    taskEither.chainEitherKW(
+      flow(
+        safeParseSchema(topicIndexSchema),
         either.mapLeft(
           (error) =>
             ({
@@ -126,13 +181,28 @@ export const readTopicIndex = (topicName: string) =>
     )
   );
 
+const topicsSummaryIndexSchema = z.array(z.string());
+
 export const readTopicsSummaryIndex = pipe(
   taskEither.rightIO(getIndexFilePath(topicsIndexFileName)),
   taskEither.chainW(safeReadIndex),
-  taskEither.map((data) => data as string[])
+  taskEither.chainEitherKW(
+    flow(
+      safeParseSchema(topicsSummaryIndexSchema),
+      either.mapLeft(
+        (error) =>
+          ({
+            type: "topics-summary-index-parse-error",
+            error,
+          } as const)
+      )
+    )
+  )
 );
 
-const createTopicsSummary = (topicsWithContentMap: TopicsWithContentMap) =>
+const createTopicsSummary = (
+  topicsWithArticlesMap: TopicsWithParsedArticlesMap
+) =>
   pipe(
     taskEither.rightIO(getIndexFilePath(topicsIndexFileName)),
     taskEither.chainFirstW(ensureParentDirectoryExists),
@@ -147,7 +217,7 @@ const createTopicsSummary = (topicsWithContentMap: TopicsWithContentMap) =>
       pipe(
         safeWriteIndex(
           topicsIndexFilePath,
-          pipe(Array.from(topicsWithContentMap.keys()), array.sort(string.Ord))
+          pipe(Array.from(topicsWithArticlesMap.keys()), array.sort(string.Ord))
         ),
         taskEither.mapLeft(
           (error) =>
@@ -159,9 +229,3 @@ const createTopicsSummary = (topicsWithContentMap: TopicsWithContentMap) =>
       )
     )
   );
-
-interface TopicIndexWriteError {
-  type: "cannot-write-topic-index";
-  topic: string;
-  error: FileWriteError;
-}

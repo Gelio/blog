@@ -19,28 +19,28 @@ import {
   ReadSlugReverseMappingError,
 } from "../../content-processing/indexes";
 import {
-  ContentMetadata,
   FileReadError,
   safeReadFile,
 } from "../../content-processing/indexes/utils";
-import { MDXRemote } from "next-mdx-remote";
+import { MDXRemote, MDXRemoteSerializeResult } from "next-mdx-remote";
 import {
   DevOnlyErrorDetails,
   ErrorAlert,
   ErrorAlertContainer,
 } from "../../components/ErrorAlert";
-import { contentIncludeFileGlobs } from "../../content-processing/utils";
+import { IndexedArticleMetadata } from "../../content-processing/indexes/schema";
+import { contentIncludeFileGlobs } from "../../content-processing/app-utils";
 
 interface SourceWithMetadata {
-  mdxSource: any;
-  contentMetadata: ContentMetadata;
+  mdxSource: MDXRemoteSerializeResult;
+  articleMetadata: IndexedArticleMetadata;
 }
 
 interface ArticlePageProps {
   sourceWithMetadataResult: either.Either<
     | ReadSlugReverseMappingError
     | {
-        type: "content-read-error";
+        type: "article-read-error";
         error: FileReadError;
       },
     SourceWithMetadata
@@ -60,13 +60,13 @@ const ArticlePage = ({ sourceWithMetadataResult }: ArticlePageProps) => {
                 <DevOnlyErrorDetails error={error} />
               </ErrorAlertContainer>
             ),
-            ({ contentMetadata, mdxSource }) => (
+            ({ articleMetadata, mdxSource }) => (
               <>
                 <ArticleHeader
-                  title={contentMetadata.title}
-                  readingTimeMin={contentMetadata.readingTimeMin}
-                  createdDate={contentMetadata.date}
-                  tagNames={contentMetadata.tags}
+                  title={articleMetadata.title}
+                  readingTimeMin={articleMetadata.readingTimeMin}
+                  createdDate={articleMetadata.date}
+                  tagNames={articleMetadata.tags}
                 />
 
                 <StyledArticleSection>
@@ -128,46 +128,44 @@ export const getStaticProps: GetStaticProps<
   const sourceWithMetadataResult = await pipe(
     readSlugReverseMapping,
     taskEither.chainEitherKW((slugReverseMapping) => {
-      const contentWithMetadata = slugReverseMapping[slug];
-      if (!contentWithMetadata) {
+      const articleWithMetadata = slugReverseMapping[slug];
+      if (!articleWithMetadata) {
         return either.left({
           type: "slug-not-found",
           slug,
         } as const);
       }
 
-      return either.right(contentWithMetadata);
+      return either.right(articleWithMetadata);
     }),
-    taskEither.bindTo("contentWithMetadata"),
-    taskEither.bindW(
-      "mdxSource",
-      ({ contentWithMetadata: { contentFilePath } }) =>
-        pipe(
-          safeReadFile(contentFilePath),
-          taskEither.mapLeft(
-            (error) =>
-              ({
-                type: "content-read-error",
-                error,
-              } as const)
-          ),
-          taskEither.chainTaskK(
-            (source) => () => serialize(source, { parseFrontmatter: true })
-          ),
-          taskEither.map((mdxSource) => {
-            // NOTE: delete frontmatter since it cannot be serialized by Next in SSR.
-            // Frontmatter is already available via `contentMetadata`
-            delete mdxSource["frontmatter"];
-            return mdxSource;
-          })
-        )
+    taskEither.bindTo("articleWithMetadata"),
+    taskEither.bindW("mdxSource", ({ articleWithMetadata: { filePath } }) =>
+      pipe(
+        safeReadFile(filePath),
+        taskEither.mapLeft(
+          (error) =>
+            ({
+              type: "article-read-error",
+              error,
+            } as const)
+        ),
+        taskEither.chainTaskK(
+          (source) => () => serialize(source, { parseFrontmatter: true })
+        ),
+        taskEither.map((mdxSource) => {
+          // NOTE: delete frontmatter since it cannot be serialized by Next in SSR.
+          // Frontmatter is already available via `articleMetadata`
+          delete mdxSource["frontmatter"];
+          return mdxSource;
+        })
+      )
     ),
     taskEither.map(
       ({
-        contentWithMetadata: { contentMetadata },
+        articleWithMetadata: { metadata },
         mdxSource,
       }): SourceWithMetadata => ({
-        contentMetadata,
+        articleMetadata: metadata,
         mdxSource,
       })
     )
