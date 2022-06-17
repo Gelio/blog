@@ -1,4 +1,5 @@
 import styled from "@emotion/styled";
+import { MDXProvider } from "@mdx-js/react";
 import { task } from "fp-ts";
 import { pipe } from "fp-ts/function";
 import { MDXRemote, MDXRemoteSerializeResult } from "next-mdx-remote";
@@ -26,12 +27,13 @@ export const IndexedArticleCard = ({ metadata }: IndexedArticleCardProps) => (
     title={metadata.title}
     slug={metadata.slug}
     summary={
-      <MDXRemote
-        {...metadata.summary}
+      <MDXProvider
         components={{
           p: StyledArticleCardSummary,
         }}
-      />
+      >
+        <MDXRemote {...metadata.summary} />
+      </MDXProvider>
     }
   />
 );
