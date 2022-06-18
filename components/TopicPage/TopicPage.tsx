@@ -113,11 +113,15 @@ const StyledTopicDescription = styled("p")({
   marginBlockEnd: rem(spacing(2)),
 });
 
-const StyledArticleCardsContainer = styled("div")(responsiveContainer, {
-  display: "flex",
-  flexDirection: "column",
-  gap: rem(spacing(2)),
-});
+const StyledArticleCardsContainer = styled("div")(
+  responsiveContainer,
+  responsiveContainerInlinePadding,
+  {
+    display: "flex",
+    flexDirection: "column",
+    gap: rem(spacing(2)),
+  }
+);
 
 const maxButtonsGap = rem(200);
 const StyledPaginationContainer = styled("div")(responsiveContainer, {
