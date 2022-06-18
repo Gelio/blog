@@ -4,6 +4,7 @@
   "private": true,
   "scripts": {
     "dev": "next dev",
+    "dev:content": "next-remote-watch content",
     "build": "npm run create-indexes && npm run build:next",
     "build:next": "next build",
     "start": "next start",
@@ -39,6 +40,7 @@
     "eslint-config-next": "12.1.6",
     "esno": "^0.16.3",
     "glob": "^8.0.3",
+    "next-remote-watch": "^1.0.0",
     "prettier": "^2.6.2",
     "remark-frontmatter": "^4.0.1",
     "typescript": "4.7.3"
