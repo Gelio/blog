@@ -113,6 +113,8 @@ content-indexes
 
 They hold the following contents:
 
+<WithWrappedCodeBlock>
+
 ```sh
 11:02 $ cat content-indexes/all-articles.json
 [
@@ -171,6 +173,8 @@ They hold the following contents:
   "description": "Articles related to my blog. These could be describing the architecture,\nthe decisions made, etc.\n"
 }
 ```
+
+</WithWrappedCodeBlock>
 
 There is duplication of article metadata in the indexes. That is on purpose. The
 indexes hold [denormalized](https://en.wikipedia.org/wiki/Denormalization) data.
@@ -282,7 +286,7 @@ runtime and the article pages were built correctly.
 also to directiories, which makes Next happily throw an `EISDIR` error when
 building on Vercel:
 
-```raw
+```text
 Traced Next.js server files in: 377.934ms
 [Error: EISDIR: illegal operation on a directory, read] {
   errno: -21,

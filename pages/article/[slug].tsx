@@ -33,6 +33,9 @@ import { contentIncludeFileGlobs } from "../../content-processing/app-utils";
 import { HeadDocumentTitle, HeadMetaDescription } from "../../seo";
 import stripMarkdown from "strip-markdown";
 import { remark } from "remark";
+import rehypeHighlight from "rehype-highlight";
+import "highlight.js/styles/base16/gruvbox-dark-medium.css";
+import { WithWrappedCodeBlock } from "../../components/WithWrappedCodeBlock";
 
 interface SourceWithMetadata {
   mdxSource: MDXRemoteSerializeResult;
@@ -98,6 +101,7 @@ const ArticlePage = ({ sourceWithMetadataResult }: ArticlePageProps) => {
                         ),
                       p: StyledArticleParagraph,
                       h2: StyledArticleSectionHeading,
+                      WithWrappedCodeBlock,
                     }}
                   >
                     <MDXRemote {...mdxSource} />
@@ -164,7 +168,13 @@ export const getStaticProps: GetStaticProps<
             } as const)
         ),
         taskEither.chainTaskK(
-          (source) => () => serialize(source, { parseFrontmatter: true })
+          (source) => () =>
+            serialize(source, {
+              parseFrontmatter: true,
+              mdxOptions: {
+                rehypePlugins: [rehypeHighlight],
+              },
+            })
         ),
         taskEither.map((mdxSource) => {
           // NOTE: delete frontmatter since it cannot be serialized by Next in SSR.
