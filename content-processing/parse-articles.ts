@@ -170,7 +170,11 @@ const parseArticleMetadata = (
           }),
           (parsedFrontMatter): ParsedArticleMetadata => ({
             ...parsedFrontMatter,
-            readingTimeMin: readingTime(content).minutes,
+            readingTimeMin: readingTime(content, {
+              // NOTE: I find it hard to read technical blogposts at the
+              // default 200 words per minute.
+              wordsPerMinute: 150,
+            }).minutes,
           })
         )
       );
