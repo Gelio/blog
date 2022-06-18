@@ -1,0 +1,313 @@
+---
+title: Indexing articles on my blog
+date: 2022-06-18
+tags: blog
+slug: indexing-blog-articles
+summary:
+  How to avoid duplicate work when serving pages for my blog? Building up
+  indexes that summarize the articles in a concise format is one solution to
+  this problem.
+---
+
+I had a couple of goals when deciding how to structure the content-processing
+pipeline for my blog:
+
+- Articles written in [MDX](https://mdxjs.com/) files (Markdown with JSX) so I
+  can conveniently author them in my
+  [neovim editor](https://github.com/neovim/neovim).
+
+  Initially, I thought about storing them in a database instead of files, but
+  that would increase my costs, since I would have to host a database. I also
+  thought of using a CMS like [Strapi](https://strapi.io/), but again, that
+  costs more money than just static files. I also would have more difficulty
+  using my beloved neovim to write content there.
+
+- Articles are stored in the `content/articles` directory. The structure of that
+  directory is not strict.
+
+  I decided to group them into a 2-level hierarchy initially. Grouped first by
+  the year, and then by the month of the created date (e.g.
+  `content/articles/2022/06/18-articles-indexes.mdx`). However, I want to allow
+  myself for the liberty of having series for which all articles would be stored
+  in a single directory, for example
+  `content/articles/fp-ts/01-piping-values.mdx`).
+
+- Each article belongs to one or more topics.
+
+- Each topic has a description.
+
+- Each article has an arbitrary
+  [slug](https://developer.mozilla.org/en-US/docs/Glossary/Slug). There is no
+  scheme for the slug format.
+
+These are great for the content author (i.e. me). I am not so sure about the
+application that serves my blog would be happy, since, in the naive case, it has
+to do a lot more work on each request:
+
+1. Scan all the articles in the `content/articles` directory.
+2. Parse their [frontmatter](https://middlemanapp.com/basics/frontmatter/).
+3. Depending on the URL:
+
+   - for article pages (when we know the slug), find the article that matches
+     the slug, parse and show its MDX content,
+   - for a single topic page, filter the articles with that topic and list them,
+   - for the list of topics, find all topics from all articles and list them,
+   - for the home page, sort all articles by their created date and show them.
+
+I am using [Next.js](https://nextjs.org/) as the meta-framework. Thanks to its
+[Static Generation](https://nextjs.org/docs/basic-features/pages#static-generation-recommended),
+most of that work would be done during build time. It is much better than doing
+that at request-time, since the pages are already prebuilt when the user
+requests them, leading to a snappier user experience.
+
+This approach would scale to probably hundreds of articles. I could have left it
+as it was and pay the price of walking and parsing the articles multiple times
+during each build. That was not good enough for me. I wanted to see if I reduce
+the duplicate work.
+
+**Warning** This is a case of
+[premature optimization](https://stackify.com/premature-optimization-evil/). I
+am solving a performance problem without measuring it and finding out if it is a
+bottleneck. I am doing it to gain experience solving such a problem and to feel
+good about myself. Do not do that in a work environment 😄
+
+## The needs of each page
+
+Let's identify what the needs for each page type of my blog are.
+
+- Home page - an ordered list of articles.
+- Topics page - a list of all topics mentioned in at least 1 article.
+- Topic page (for each topic) - an ordered list of articles with that topic.
+- Article page (for each article slug) - file path to the article file.
+
+## Indexes are the solution
+
+Similarly to how
+[a database uses indexes to find rows faster](https://en.wikipedia.org/wiki/Database_index),
+my content-processing pipeline can use indexes to build pages faster than
+parsing the content files again and again.
+
+My idea was to have a single script that scans all articles and produces a
+couple of JSON files which would serve as indexes. It would run before Next
+would build the pages. When the pages are being built, instead of scanning the
+articles again, these index files would be used.
+
+Aside from building the indexes, the script also runs some validation on the
+content, like ensuring that all articles have correct frontmatter metadata,
+there are no duplicate slugs, and all topics have descriptions.
+
+### Structure of indexes
+
+The structure of the indexes looks as follows:
+
+```bash
+10:54 $ exa --tree content-indexes/
+content-indexes
+├── all-articles.json
+├── slug-reverse-mapping.json
+├── topics
+│  ├── blog.json
+│  └── test.json
+└── topics.json
+```
+
+They hold the following contents:
+
+<WithWrappedCodeBlock>
+
+```sh
+11:02 $ cat content-indexes/all-articles.json
+[
+  {
+    "title": "Indexing articles on my blog",
+    "date": "2022-06-18T00:00:00.000Z",
+    "tags": [
+      "blog"
+    ],
+    "slug": "indexing-blog-articles",
+    "summary": "How to avoid duplicate work when serving pages for my blog? Building up indexes that summarize the articles in a concise format is one solution to this problem.",
+    "readingTimeMin": 4.13
+  },
+  ...
+]
+
+11:04 $ cat content-indexes/slug-reverse-mapping.json
+{
+  "indexing-blog-articles": {
+    "metadata": {
+      "title": "Indexing articles on my blog",
+      "date": "2022-06-18T00:00:00.000Z",
+      "tags": [
+        "blog"
+      ],
+      "slug": "indexing-blog-articles",
+      "summary": "How to avoid duplicate work when serving pages for my blog? Building up indexes that summarize the articles in a concise format is one solution to this problem.",
+      "readingTimeMin": 4.13
+    },
+    "filePath": "content/articles/2022/06/18-article-indexes.mdx"
+  },
+  ...
+}
+
+11:08 $ cat content-indexes/topics.json
+[
+  "blog",
+  "test"
+]
+
+11:08 $ cat content-indexes/topics/blog.json
+{
+  "articles": [
+    {
+      "title": "Indexing articles on my blog",
+      "date": "2022-06-18T00:00:00.000Z",
+      "tags": [
+        "blog"
+      ],
+      "slug": "indexing-blog-articles",
+      "summary": "How to avoid duplicate work when serving pages for my blog? Building up indexes that summarize the articles in a concise format is one solution to this problem.",
+      "readingTimeMin": 4.13
+    },
+    ...
+  ],
+  "description": "Articles related to my blog. These could be describing the architecture,\nthe decisions made, etc.\n"
+}
+```
+
+</WithWrappedCodeBlock>
+
+There is duplication of article metadata in the indexes. That is on purpose. The
+indexes hold [denormalized](https://en.wikipedia.org/wiki/Denormalization) data.
+Each index file contains all information necessary to render the route that it
+is supposed to help serve.
+
+## Tradeoffs
+
+As with most decisions, this one also comes with some tradeoffs.
+
+Firstly, the indexes can become outdated. I have to explicitly run
+`npm run create-indexes` to create/update them. If I forget to run them after
+adding a new article, there is no error message. I simply need to remember to
+run it once in a while during content-authoring. The production environment (aka
+[Vercel](https://vercel.com/solutions/nextjs)) is not affected, because
+[indexes are always created in the npm `build` script](https://github.com/Gelio/blog/blob/cef0aed94b1991af64a3ee8c73bea52e6ef35d40/package.json#L70).
+
+Another downside of using indexes is that the code got more complex. Instead of
+doing the same content-parsing in each route, I had to write code to create and
+then read these indexes. It was a cool exercise to write most of the logic using
+[fp-ts](https://github.com/gcanti/fp-ts), but still, that is code that I need to
+maintain.
+
+## Bonus: incremental generation of article pages
+
+Another premature optimization I could implement was to defer the building of
+article pages until they are requested by some user. I could imagine that if I
+had many articles, the build process would take longer, since each article's MDX
+content would have to be parsed before the build is complete. I didn't measure
+the MDX parsing performance, which gives me the right to say this is premature
+optimization. I wanted to overengineer it anyway.
+
+Next.js has a feature called
+[Incremental Static Regeneration](https://nextjs.org/docs/basic-features/data-fetching/incremental-static-regeneration).
+Long story short, it defers building some pages until they are requested by a
+user. Article pages are a perfect use case. Instead of building all article
+pages up-front, I could only build a handful of them (perhaps the most popular
+articles and the most recent ones) and defer building all the other articles
+until some user wants to read it. The build process remains fast, since only a
+constant number of articles are built then, and for the rest of articles, the
+first user would have to wait a few seconds longer for the article to be
+processed. I have yet to tell Next which articles to prebuild, but this seems
+like the best of both worlds.
+
+### Index files not found during incremental generation
+
+Right after deploying my changes to Vercel, I noticed that article pages show
+errors due to not being able to read the `all-contents.json` index file. After
+some analysis I found out that I made a coupld of assumptions that are true when
+running the Next server locally, but are broken on
+[Vercel Edge Functions](https://vercel.com/docs/concepts/functions/edge-functions)
+(which is where the incremental generation happens):
+
+1. Next compiles page files and moves them to a different location, so using
+   `__dirname` or `import.meta.url` to find the root of the repository is no
+   longer viable.
+
+2. Next only includes a handful of repository files to be available in Edge
+   Functions. The process of figuring out which files are included is called
+   [Output File Tracing](https://nextjs.org/docs/advanced-features/output-file-tracing).
+
+I was using
+[`import.meta.url`](https://dmitripavlutin.com/javascript-import-meta/) as a
+modern way of finding the location of the current file, based on which I
+computed the file to the `content-indexes` directory. This worked well locally
+(both in `next dev` and `next start`). The structure was no longer maintained in
+Edge Functions, which made these paths invalid. The problem is easy to solve -
+Next claims that
+[`process.cwd()`](https://nodejs.org/docs/latest-v18.x/api/process.html#processcwd)
+[will point to the root of the repository](https://nextjs.org/docs/api-reference/data-fetching/get-static-props#reading-files-use-processcwd).
+After all, using `process.cwd()` made the code simpler.
+
+Even after using correct paths, the `content` directory would not be found when
+the article pages were generated. Here is what logging files at `process.cwd()`
+yielded during generating an article:
+
+```json
+{
+  "filesAtCwd": [
+    ".next",
+    "___next_launcher.cjs",
+    "___vc",
+    "node_modules",
+    "package.json",
+    "pages"
+  ]
+}
+```
+
+Next's automated output file tracing was not smart enough to figure out that I
+needed both `content` and `content-indexes` directory to render an article page.
+Fortunately, there is
+[a `unstable_includeFiles` configuration option](https://nextjs.org/docs/advanced-features/output-file-tracing#caveats)
+you can specify on a page to tell Vercel to include some files to be available
+during incremental generation
+([source](https://github.com/Gelio/blog/blob/9b4d9449d288f2d7ddcd12ad72f0408594d5c0bc/pages/article/[slug].tsx#L247-L249)):
+
+```typescript
+export const config: PageConfig = {
+  unstable_includeFiles: ["content-indexes/**/*.*", "content/**/*.*"],
+};
+```
+
+Then, both directories and their contents were included in Edge Functions
+runtime and the article pages were built correctly.
+
+**Disclaimer** Notice that the globs end with `**/*.*`. This is because globs
+**must** point to files only. Ending the glob with `**/*` would make it resolve
+also to directiories, which makes Next happily throw an `EISDIR` error when
+building on Vercel:
+
+```text
+Traced Next.js server files in: 377.934ms
+[Error: EISDIR: illegal operation on a directory, read] {
+  errno: -21,
+  code: 'EISDIR',
+  syscall: 'read'
+}
+```
+
+## Conclusion
+
+Building a blogging platform to match my needs is a cool project. So is solving
+problems prematurely. As I said before, I would not recommend doing the same in
+a professional setting, but solving interesting problems is always welcome when
+it only costs me time and gives me a chance to grow myself as an engineer.
+
+During the process I discovered some caveats related to hosting applications on
+Vercel. The worst one to debug was its
+[Output File Tracing](https://nextjs.org/docs/advanced-features/output-file-tracing),
+since I had to push a commit each time I tweaked some configuration, which was
+frustrating.
+
+I managed to make the blog platform work in the end. This article is a proof of
+that - it is the first real article to be processed by my content-processing
+pipeline.

@@ -54,5 +54,5 @@ const formatReadingTime = (readingTimeMin: number) => {
 
   return `${roundedReadingTimeMin} minute${
     roundedReadingTimeMin === 1 ? "" : "s"
-  }`;
+  } read`;
 };
