@@ -5,12 +5,13 @@
   "scripts": {
     "dev": "next dev",
     "dev:content": "next-remote-watch content",
-    "build": "npm run create-indexes && npm run build:next",
+    "build": "npm run create-indexes && npm run copy-static-content && npm run build:next",
     "build:next": "next build",
     "start": "next start",
     "lint": "next lint",
     "check-types": "tsc --noEmit",
-    "create-indexes": "esno ./content-processing/create-indexes.ts"
+    "create-indexes": "esno ./content-processing/create-indexes.ts",
+    "copy-static-content": "rsync -avh --exclude='**/*.mdx' content/articles/ public/static-content/"
   },
   "dependencies": {
     "@emotion/react": "^11.9.0",
