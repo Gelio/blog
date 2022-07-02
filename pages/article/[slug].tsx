@@ -104,7 +104,18 @@ const ArticlePage = ({ sourceWithMetadataResult }: ArticlePageProps) => {
                       p: StyledArticleParagraph,
                       h2: StyledArticleSectionHeading,
                       WithWrappedCodeBlock,
-                      img: (props) => <Image {...props} layout="responsive" />,
+                      img: (props) => (
+                        <Image
+                          // NOTE: required to fix a TS error
+                          src={props.src as string}
+                          // NOTE: required to tell ESLint we do pass `alt`
+                          alt={props.alt}
+                          {...props}
+                          // NOTE: required to fix a TS error
+                          placeholder={undefined}
+                          layout="responsive"
+                        />
+                      ),
                     }}
                   >
                     <MDXRemote {...mdxSource} />
