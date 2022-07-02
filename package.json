@@ -5,12 +5,14 @@
   "scripts": {
     "dev": "next dev",
     "dev:content": "next-remote-watch content",
-    "build": "npm run create-indexes && npm run build:next",
+    "build": "npm run create-indexes && npm run copy-static-content:cp && npm run build:next",
     "build:next": "next build",
     "start": "next start",
     "lint": "next lint",
     "check-types": "tsc --noEmit",
-    "create-indexes": "esno ./content-processing/create-indexes.ts"
+    "create-indexes": "esno ./content-processing/create-indexes.ts",
+    "copy-static-content:rsync": "rsync -avh --exclude='**/*.mdx' content/articles/ public/static-content/",
+    "copy-static-content:cp": "cp -r content/articles/. public/static-content/"
   },
   "dependencies": {
     "@emotion/react": "^11.9.0",
@@ -24,6 +26,7 @@
     "react-dom": "18.1.0",
     "reading-time": "^1.5.0",
     "rehype-highlight": "^5.0.2",
+    "rehype-img-size": "^1.0.1",
     "remark": "^14.0.2",
     "rimraf": "^3.0.2",
     "strip-markdown": "^5.0.0",

@@ -223,7 +223,7 @@ like the best of both worlds.
 
 Right after deploying my changes to Vercel, I noticed that article pages show
 errors due to not being able to read the `all-contents.json` index file. After
-some analysis I found out that I made a coupld of assumptions that are true when
+some analysis I found out that I made a couple of assumptions that are true when
 running the Next server locally, but are broken on
 [Vercel Edge Functions](https://vercel.com/docs/concepts/functions/edge-functions)
 (which is where the incremental generation happens):
@@ -283,7 +283,7 @@ runtime and the article pages were built correctly.
 
 **Disclaimer** Notice that the globs end with `**/*.*`. This is because globs
 **must** point to files only. Ending the glob with `**/*` would make it resolve
-also to directiories, which makes Next happily throw an `EISDIR` error when
+also to directories, which makes Next happily throw an `EISDIR` error when
 building on Vercel:
 
 ```text

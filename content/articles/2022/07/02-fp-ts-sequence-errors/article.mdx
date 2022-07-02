@@ -1,0 +1,459 @@
+---
+title: Collecting multiple errors in fp-ts
+date: 2022-07-02
+tags: fp-ts, TypeScript
+slug: collecting-multiple-errors-fp-ts
+summary:
+  <a href="https://github.com/gcanti/fp-ts">fp-ts</a> puts errors to the
+  forefront and helps write type-safe code that correctly reports errors.
+  Collecting errors from multiple operations can sometimes lead to boilerplate
+  code. Let's see if there is a way to make that code shorter.
+---
+
+I fell in love with [fp-ts](https://github.com/gcanti/fp-ts) for the conciseness
+of code that it offers. The other feature that I like is that it makes it easy
+to propagate and handle errors in a type-safe way. This led to me writing code
+that is more precise and easier to test. When writing business logic, I
+explicitly list the possible errors that can happen. Then, these errors are
+propagated by glue functions that call the business logic, to be shown in the UI
+later.
+
+The great thing is that with `fp-ts`, TypeScript helps unwrap the error, so I no
+longer write code where I need to defensively check what the thrown error is:
+
+```typescript
+try {
+  someOperation();
+} catch (error) {
+  if (error instanceof Error) {
+    showToast(error.message);
+  } else if (typeof error === "string") {
+    showToast(error);
+  } else {
+    console.log("Error", error);
+    showToast("Unknown error occurred");
+  }
+}
+```
+
+Instead, this code looks like:
+
+```typescript
+pipe(
+  someOperation(),
+  either.match(
+    (error): undefined => {
+      switch (error.type) {
+        case "name-too-short":
+          showToast("The username is too short");
+          return;
+
+        case "age-too-low":
+          showToast("You must be at least 21 to use this website");
+          return;
+
+        // Errors are exhaustively handled.
+        // There are no more possible error types.
+        // TypeScript will show an error if some error type is not handled.
+      }
+    },
+    (result) => {
+      // Process the result in some way...
+    }
+  )
+);
+```
+
+If you want to see TypeScript expecting exhaustively handling each `switch`
+variant, see
+[this TypeScript playground](https://www.typescriptlang.org/play?#code/GYVwdgxgLglg9mABAUwB4AsCGIDOsBuyANgJ4AKATnBMjjgGqZEjIAU+TLAXIgOSa9EAHz4AjQSN4ReASh7gAJsmAwwyBYgDeAKESIcAdxhQI6RO07IZW3XsQRMOZHwFdbd+whxwiyAHREcADmrABEAIKhMu52FMhQIBRgANzaMQ5OiKGioW4eehBePv6BIaEAQlGp+YhxCUnViAC+2k1AA).
+
+The snippet that uses fp-ts is longer, that is true. The tradeoff is that the
+`error` is strictly typed. When hovering over the `error` type, you can see all
+the possible _expected_ errors.
+
+![Precise type information about the `error.type` in the fp-ts variant of the code](/static-content/2022/07/02-fp-ts-sequence-errors/hover-error-known-type.png)
+
+Compare that with errors caught in a `catch` clause which have the `unknown`
+type.
+
+![The type of caught `error` is `unknown`](/static-content/2022/07/02-fp-ts-sequence-errors/hover-error-unknown-type.png)
+
+## What if there are many operations that can fail?
+
+I see two main categories of running multiple operations:
+
+1. Executing the same operation for each element in an array (aka
+   [`Array.prototype.map`](https://developer.mozilla.org/en-US/docs/Web/JavaScript/Reference/Global_Objects/Array/map))
+   (the order of results does not matter).
+
+2. Executing different operations (the order of results matters).
+
+### Combining errors from an array of `Either`s
+
+Let's focus on the following piece of code:
+
+```typescript
+type NumberProcessingError = "cannot divide by zero" | "NaN";
+
+function processNumber(
+  num: number
+): either.Either<NumberProcessingError, number> {
+  if (Number.isNaN(num)) {
+    return either.left("NaN");
+  } else if (num === 0) {
+    return either.left("cannot divide by zero");
+  }
+
+  return either.right(10 / num);
+}
+
+const result = pipe([1, 2, 3, NaN, 0, 5], array.map(processNumber));
+```
+
+[TypeScript playground](https://www.typescriptlang.org/play?#code/JYWwDg9gTgLgBAbzgQylZBPANHApsGAC1yjgF84AzKCEOAckrAFoYBnegKFElkTjDAwuclRp1GLdgHoANsABG0ygFcAdgGMYwCGq6cYGYXAByKkApIAFGhtxs2wNQHMAommhwAvHABEG5DU1CHgAE2AAN2BQkQUMOAAvEghfOAAfPxNkE18Abk5OVU1tXQFbezYzCxIACk44ODVzAC5G80soTgBKVvwiEgA6VwJiKAAeKo6bCDsHJzcPKBwm6qgAPkR6uGBKOBrJweBK7JqVrq7NhoaoXBgVKDU8EcHZXEoYGt8snK78hopcLI2CIdnsVt4vD4AAwXBBba63e6PPqjAavd6fAJBEJwcJRGJwOKJZK+X5bMgFBF3B5PfpQAZQYDOQgfACMULg0jaIDJFM4Gl0bHgNzYKlk8B8gmENQA2qycAAmHAAZhw3xwUJwAFYALo4VDoDADEDIMA1MDlBwHKDnfJAA)
+
+In this case, we are dealing with an array of `Either`s. `result` has the type
+`Either<NumberProcessingError, number>[]`. How can we tell if processing all
+items in the array succeeded?
+
+We could check if there is at least one item in the array that is `Left`
+(error). If all items are `Right`, we can remove the `Either` wrapping from them
+and continue working with just an array of numbers. This should be more
+convenient than working with an array of `Either`s.
+
+What I have just described is exactly the behavior of
+[`either.sequenceArray`](https://gcanti.github.io/fp-ts/modules/Either.ts.html#sequencearray).
+It takes an array of `Either<E, A>` and returns `Either<E, A[]>`.
+
+In other words, you give it an array of results that could have failed, and it
+will return you **a single result** that is either the first error encountered
+in that results array, or the _right_ values from those results.
+
+Let's see that in practice. Let's attach `either.sequenceArray` at the end of
+our data processing pipeline:
+
+```typescript
+pipe(
+  [1, 2, 3, NaN, 0, 5],
+  array.map(processNumber),
+  // NOTE: this is new
+  either.sequenceArray,
+  either.match(
+    (error) => {
+      console.log("Processing some number failed", error);
+    },
+    (numbers) => {
+      console.log(
+        "Processing all numbers succeeded. Here are the results:",
+        numbers
+      );
+    }
+  )
+);
+```
+
+[TypeScript playground](https://www.typescriptlang.org/play?#code/JYWwDg9gTgLgBAbzgQylZBPANHApsGAC1yjgF84AzKCEOAckrAFoYBnegKFElkTjDAwuclRp1GLdgHoANsABG0ygFcAdgGMYwCGq6cYGYXAByKkApIAFGhtxs2wNQHMAommhwAvHABEG5DU1CHgAE2AAN2BQkQUMOAAvEghfOAAfPxNkE18Abk5OVU1tXQFbezYzCxIACk44Brg1cwAuJvNLKE4ASjb8IhIAOlcCYigAHirOmwg7Byc3DygcZuqoAD5EesbgSjgaqaHgSuya1e7urcbruChcGBUoNTxRodlcShga3yyc7vzrhRcLI2CJdvtVt4vD4AAyXBDbG63e6PZ79MaDd6fb4BIIhODhKIxOBxRLJXz-RHkArXO4PJ4vAZQQZQYDOQhfACMMLg0naIEpZAKgmEdQaAG1OTgAEw4ADMOF+OBhOAArABdLDbVDoDCDEDIMA1MDlByHKDdLUNaR8kwAeQAKq42kRjnA3WpcAB3bbooaggCOKlwmlwAEE0JgrYyMQaYBpCGLGjUSDQLd5NgikRpdGwIO9MRBnN8ZnNHC44HmQCJVp0qMhgO9Qr4cKnoJTAdGGmcOiQ2JcvJmqQ0c2o8wXZEWk0jfKWKgsULJZPzOmxKyoNHZcDFQoM4AAJEgiVAiAbItgqWTsFot4eNWt9u8dxpChrdHr5IA)
+
+Using `either.sequenceArray` makes it easier to get to the correct results and
+process them further. The tradeoff of how easy `either.sequenceArray` is to use
+is that it only returns the first error that it encounters. If there were
+multiple processing errors, as is the case in the snippet above, the 2nd and
+further errors are discarded.
+
+If we wanted to get an **array of errors** instead, we could use
+[`array.sequence`](https://gcanti.github.io/fp-ts/modules/Array.ts.html#sequence).
+It gives us more control over the logic done when combining multiple `Either`s
+in the array. This is specified by its `Applicative` parameter. If we only cared
+about the first error, we could pass
+[`either.Applicative`](https://gcanti.github.io/fp-ts/modules/Either.ts.html#applicative)
+as the `Applicative`.
+
+Since we care about multiple errors, we need to use a more involved approach -
+[`either.getApplicativeValidation`](https://gcanti.github.io/fp-ts/modules/Either.ts.html#getapplicativevalidation).
+It yields to the `Semigroup` that we provide as an argument for the actual logic
+that will get run to combine the `Left`s from `Either`s. The method I reach for
+most often is combining them into an array of errors. We can get a `Semigroup`
+for an array of any type by calling
+[`array.getSemigroup`](https://gcanti.github.io/fp-ts/modules/Array.ts.html#getsemigroup)
+and providing the type we want as a generic parameter.
+
+Let's see how to use it in practice:
+
+```typescript
+// NOTE: prepare the Applicative that can combine `Left`s (`NumberProcessingError`s)
+const numberProcessingErrorApplicative = either.getApplicativeValidation(
+  array.getSemigroup<NumberProcessingError>()
+);
+
+pipe(
+  [1, 2, 3, NaN, 0, 5],
+  array.map(processNumber),
+  // NOTE: change the errors to single-element arrays to combine them later
+  array.map(either.mapLeft((error) => [error])),
+  // NOTE: compress the `Either<[NumberProcessingError], number>[]`
+  // into `Either<NumberProcessingError[], number[]>`
+  array.sequence(numberProcessingErrorApplicative),
+  either.match(
+    (errors) => {
+      console.log("Errors during processing", errors);
+    },
+    (numbers) => {
+      console.log(
+        "Processing all numbers succeeded. Here are the results:",
+        numbers
+      );
+    }
+  )
+);
+```
+
+Unfortunately, TypeScript playground has problems with type inference in such an
+involved snippet of code, so no link this time.
+
+We can refactor the code a bit so it is shorter by using
+[`flow`](https://gcanti.github.io/fp-ts/modules/function.ts.html#flow) and
+[`array.traverse`](https://gcanti.github.io/fp-ts/modules/Array.ts.html#traverse):
+
+```diff
+ pipe(
+   [1, 2, 3, NaN, 0, 5],
+-   array.map(processNumber),
+-   // NOTE: change the errors to single-element arrays to combine them later
+-   array.map(either.mapLeft((error) => [error])),
+-   // NOTE: compress the `Either<[NumberProcessingError], number>[]`
+-   // into `Either<NumberProcessingError[], number[]>`
+-   array.sequence(numberProcessingErrorApplicative),
++  array.traverse(numberProcessingErrorApplicative)(
++    flow(
++      processNumber,
++      either.mapLeft((error) => [error])
++    )
++  ),
+   either.match(
+     (errors) => {
+       console.log("Errors during processing", errors);
+     },
+     (numbers) => {
+       console.log(
+         "Processing all numbers succeeded. Here are the results:",
+         numbers
+       );
+     }
+   )
+ );
+```
+
+When processing an array of results, this is usually enough error handling for
+me.
+
+Let's see how to combine multiple positional results.
+
+### Combining positional results
+
+Sorry, I didn't have a good name for this section.
+
+When I said _positional results_, I mean a situation in which we execute a few
+computations that can fail for different reasons. In such a case, using
+`either.sequenceArray` or even `array.sequence` is usually not enough. Both of
+them work with only a single `Left` type. They are not good at combining
+different error types.
+
+Let's imagine we have the following 3 functions:
+
+```typescript
+import { taskEither } from "fp-ts";
+
+declare function fetchUserById(
+  clientId: unknown
+): taskEither.TaskEither<{ type: "user-not-found-error" }, User>;
+
+declare function fetchSpecialistById(
+  specialistId: unknown
+): taskEither.TaskEither<{ type: "specialist-not-found" }, Specialist>;
+
+declare function fetchWorkingDay(
+  specialistId: unknown,
+  startDateTime: unknown
+): taskEither.TaskEither<{ type: "working-day-not-found" }, WorkingDay>;
+
+// Stub types so TypeScript does not complain
+interface User {}
+interface Specialist {}
+interface WorkingDay {}
+```
+
+In case you did not know,
+[`TaskEither`](https://gcanti.github.io/fp-ts/modules/TaskEither.ts.html) is a
+container used for asynchronous operations that can fail. It boils down to a
+function returning a `Promise` that resolves with an `Either` to say whether the
+result was successful or not. It works around the issue of `Promise` rejections
+not being strictly typed.
+
+Imagine we want to run these 3 functions concurrently and combine the results.
+Notice that each function has a different error signature and returns different
+data.
+
+I said `sequenceArray` will not work. Let's see if I am right.
+
+![Error message when using `taskEither.sequenceArray` to combine the results. Error types are different and cannot be combined.](/static-content/2022/07/02-fp-ts-sequence-errors/sequence-array-error.png)
+
+TypeScript complains about error types being different inside of that array.
+That makes sense. `sequenceArray` needs a single type for an error. It does not
+assume it will be a union of error types.
+
+Even if we got `taskEither.sequenceArray` to work with the error types, it would
+return us an array of a single type. The order would not be preserved.
+
+For situations where the order of results matters, let's use yet another tool in
+fp-ts' belt:
+[`apply.sequenceT`](https://gcanti.github.io/fp-ts/modules/Apply.ts.html#sequencet).
+
+It requires an `Apply` for the container that it will work on. Conveniently,
+there is
+[`taskEither.ApplyPar`](https://gcanti.github.io/fp-ts/modules/TaskEither.ts.html#applypar)
+and
+[`taskEither.ApplySeq`](https://gcanti.github.io/fp-ts/modules/TaskEither.ts.html#applyseq).
+Choosing one or the other will make the computations run in parallel or
+sequentially.
+
+Let's put that new knowledge into practice:
+
+```typescript
+pipe(
+  apply.sequenceT(taskEither.ApplyPar)(
+    fetchUserById(1),
+    fetchSpecialistById(2),
+    fetchWorkingDay(2, "2022-07-02")
+  )
+);
+```
+
+Almost. Again, different types of errors cause problems.
+
+![Error message when using `apply.sequenceT` to combine the results. Error types are different and cannot be combined.](/static-content/2022/07/02-fp-ts-sequence-errors/sequenceT-error.png)
+
+Looks like there is really no way around making the errors be of the same type.
+
+```typescript
+pipe(
+  apply.sequenceT(
+    taskEither.ApplyPar as apply.Apply2C<
+      "TaskEither",
+      {
+        type:
+          | "user-not-found-error"
+          | "specialist-not-found"
+          | "working-day-not-found";
+      }
+    >
+  )(fetchUserById(1), fetchSpecialistById(2), fetchWorkingDay(2, "2022-07-02")),
+  taskEither.match(
+    (error) => {
+      console.log("Got error", error.type);
+    },
+    ([user, specialist, workingDay]) => {
+      // TODO: ...
+    }
+  )
+);
+```
+
+It works, the `error` is strongly typed! But it's not great. We had to manually
+combine the error types.
+
+Surely there must be a solution that nudges TypeScript to do that work for us.
+Also, ideally, we would want an array of errors, not just a single error. Let's
+see how to do that.
+
+```typescript
+/**
+ * Converts an error to a array with that error as the only element.
+ * Necessary to let `getApplicativeValidation` combine errors into an array.
+ */
+const singletonError = <E, A>(
+  t: taskEither.TaskEither<E, A>
+): taskEither.TaskEither<[E], A> =>
+  pipe(
+    t,
+    taskEither.mapLeft((e) => [e])
+  );
+
+/** An improved `taskEither.sequenceArray` */
+const partitionErrors = <
+  T extends nonEmptyArray.NonEmptyArray<either.Either<any, any>>
+>(
+  results: T
+) => {
+  type ExtractLeft<T> = T extends either.Left<infer E> ? E : never;
+  // NOTE: the magic happens here - we extract all the error types
+  // and tell TypeScript to use that union as the combined error type
+  type WorkflowError = ExtractLeft<typeof results[number]>[number];
+  const validation = either.getApplicativeValidation(
+    array.getSemigroup<WorkflowError>()
+  );
+  return apply.sequenceT(validation)(...results);
+};
+
+pipe(
+  // NOTE: we use an `Apply` from `task` so it gives us the raw `Either`s
+  // instead of the `Right`s
+  apply.sequenceT(task.ApplyPar)(
+    singletonError(fetchUserById(1)),
+    singletonError(fetchSpecialistById(2)),
+    singletonError(fetchWorkingDay(2, "2022-07-02"))
+  ),
+  task.map(partitionErrors),
+  taskEither.match(
+    (errors) => {
+      errors.forEach((error) => {
+        console.log("Got error", error.type);
+      });
+    },
+    ([user, specialist, workingDay]) => {
+      // TODO: ...
+    }
+  )
+);
+```
+
+See the comments in the code for explanations around some of the new parts.
+
+This is the most advanced error handling solution that I used and needed. It
+unwraps positional results so you can process them with strict types as a tuple
+(`user`, `specialist`, `workingDay`). As for errors, it infers the union of all
+possible error types and returns you an array of those errors, in case there was
+at least one error.
+
+With this solution, you can display all errors that happened during these
+asynchronous operations without having to manually write the union of all error
+types.
+
+## Conclusion
+
+`fp-ts` is a great library that makes it easy to write functional code in
+TypeScript. Its focus on bringing errors to the forefront and having strict
+types for them helps engineers write code that does not ignore errors. An
+informed user is a happy user. Even if there was some failure, the user should
+be more understanding if we tell them more information behind the failure's
+cause.
+
+If we run multiple operations, it is useful to combine their results in a way
+that forks execution: one branch when there was at least one error, another
+branch when there were no errors.
+
+There are 2 ways to combine the results. These depend on whether we are working
+with an array and do not care about the order of results, or we need to get the
+results in the same order and we know how many results there were.
+
+For the first solution, it is usually enough to use `either.sequenceArray`. This
+only captures the first error. If we care about all errors, we need to use
+`apply.sequence` and `either.getApplicativeValidation`.
+
+When working with positional arguments, we can also use `either.sequenceArray`,
+but then we have to specify the combined type that matches all possible errors.
+I also presented a solution that infers that type automatically and combines
+multiple results into an array.
+
+These 4 methods are enough for me to handle errors and surface them to the users
+in the code that I write.

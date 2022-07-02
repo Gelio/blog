@@ -37,4 +37,6 @@ const globAnyFileInDirectory = (directoryPath: string) =>
 export const contentIncludeFileGlobs: PageConfig["unstable_includeFiles"] = [
   "content-indexes",
   "content",
+  // NOTE: static content is inspected by rehype-img-size to determine image dimensions
+  "public/static-content",
 ].map(globAnyFileInDirectory);
