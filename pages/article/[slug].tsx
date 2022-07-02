@@ -34,8 +34,10 @@ import { HeadDocumentTitle, HeadMetaDescription } from "../../seo";
 import stripMarkdown from "strip-markdown";
 import { remark } from "remark";
 import rehypeHighlight from "rehype-highlight";
+import rehypeImageSize from "rehype-img-size";
 import "highlight.js/styles/base16/gruvbox-dark-medium.css";
 import { WithWrappedCodeBlock } from "../../components/WithWrappedCodeBlock";
+import Image from "next/image";
 
 interface SourceWithMetadata {
   mdxSource: MDXRemoteSerializeResult;
@@ -102,6 +104,7 @@ const ArticlePage = ({ sourceWithMetadataResult }: ArticlePageProps) => {
                       p: StyledArticleParagraph,
                       h2: StyledArticleSectionHeading,
                       WithWrappedCodeBlock,
+                      img: (props) => <Image {...props} layout="responsive" />,
                     }}
                   >
                     <MDXRemote {...mdxSource} />
@@ -172,7 +175,14 @@ export const getStaticProps: GetStaticProps<
             serialize(source, {
               parseFrontmatter: true,
               mdxOptions: {
-                rehypePlugins: [rehypeHighlight],
+                rehypePlugins: [
+                  rehypeHighlight,
+                  [
+                    // @ts-expect-error Mismatched types
+                    rehypeImageSize,
+                    { dir: "public" },
+                  ],
+                ],
               },
             })
         ),

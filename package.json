@@ -24,6 +24,7 @@
     "react-dom": "18.1.0",
     "reading-time": "^1.5.0",
     "rehype-highlight": "^5.0.2",
+    "rehype-img-size": "^1.0.1",
     "remark": "^14.0.2",
     "rimraf": "^3.0.2",
     "strip-markdown": "^5.0.0",
