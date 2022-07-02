@@ -1,0 +1,4 @@
+fp-ts is a library for functional programming in TypeScript. It offers many
+modules that make it easier to write functional code. It is oriented on
+minimizing side-effects, focusing on strictly-typed error handling, and
+reducing boilerplate.
