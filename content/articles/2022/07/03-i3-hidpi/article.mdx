@@ -1,0 +1,210 @@
+---
+title: HiDPI in i3
+date: 2022-07-03
+tags: system-configuration
+slug: i3-hidpi
+summary:
+  My journey to using HiDPI in i3 and finally getting the full benefits of
+  having a 4k monitor.
+---
+
+I am using [i3](https://i3wm.org/) as a Window Manager. I love the feeling of
+being able to control everything via keyboard. Its tiling nature and easy access
+to different workspaces is what makes me very comfortable in it. I started using
+it in
+[February 2021](https://github.com/Gelio/ubuntu-dotfiles/commit/f1a79fca7cf4778bddf683770e862d8b68507349)
+and enjoyed it since.
+
+When starting remote work at [Splitgraph](https://www.splitgraph.com), I got 2
+[Acer Nitro VG280K 28 inch 4k](https://www.amazon.com/Acer-VG280K-bmiipx-FreeSync-Technology/dp/B08VD89JMF)
+monitors. They were quite an upgrade from my previous 22 inch 1080p monitors.
+
+Immediately after connecting them to my laptop and using
+[`xrandr`](https://wiki.archlinux.org/title/xrandr) to initialize them
+
+```sh
+$ xrandr --output HDMI-0 --auto \
+   --output DP-0 --auto --right-of HDMI-0
+
+$ xrandr
+Screen 0: minimum 8 x 8, current 7680 x 2160, maximum 32767 x 32767
+DP-0 connected 3840x2160+3840+0 (normal left inverted right x axis y axis) 620mm x 340mm
+   3840x2160     60.00*+  59.94    50.00    29.97    25.00    23.98
+   2560x1440     59.95
+   1920x1080     60.00    59.94    50.00
+   1680x1050     59.95
+   1440x900      59.89
+   1280x1024     75.02    60.02
+   1280x960      60.00
+   1280x800      59.81
+   1280x720      60.00    59.94    50.00
+   1152x864      75.00
+   1024x768      75.03    70.07    60.00
+   800x600       75.00    72.19    60.32    56.25
+   720x576       50.00
+   720x480       59.94
+   640x480       75.00    72.81    59.94    59.93
+DP-1 disconnected (normal left inverted right x axis y axis)
+DP-2 disconnected (normal left inverted right x axis y axis)
+DP-3 disconnected (normal left inverted right x axis y axis)
+HDMI-0 connected primary 3840x2160+0+0 (normal left inverted right x axis y axis) 621mm x 341mm
+   3840x2160     60.00*+  59.94    50.00    29.97    25.00    23.98
+   2560x1440     59.95
+   1920x1080     60.00    59.94    50.00
+   1680x1050     59.95
+   1440x900      59.89
+   1280x1024     75.02    60.02
+   1280x960      60.00
+   1280x800      59.81
+   1280x720      60.00    59.94    50.00
+   1152x864      75.00
+   1024x768      75.03    70.07    60.00
+   800x600       75.00    72.19    60.32    56.25
+   720x576       50.00
+   720x480       59.94
+   640x480       75.00    72.81    59.94    59.93
+DP-4 disconnected (normal left inverted right x axis y axis)
+```
+
+I noticed a problem. The text was too small!
+
+As outlined in
+[this HackerNews comment](https://news.ycombinator.com/item?id=25669793), text
+rendered in a 4k resolution (3840x2160) is hard to read below 43 inches without
+scaling. I can confirm that - the text was way too small for me at a distance I
+was previously comfortable.
+
+I switched to Windows and tried using it there. Windows immediately scaled up
+the resolution by 150% but it was still using 4k. This made the text readable,
+the interface large enough to use comfortably, and any content like videos on
+YouTube were shown in 4k. The sweet spot.
+
+I tried to do the same on my Ubuntu with i3. I failed. I was too much of an
+Xorg/i3 newbie to follow all the instructions. All in all, I settled on using
+2560x1440 as my resolution on both monitors. It made the text a bit blurry and
+the videos were running in 1440p max (no 4k for me), but at least it was easy to
+set up and it didn't require any custom scripts.
+
+```sh
+xrandr --output HDMI-0 --mode 2560x1440 \
+  --output DP-0 --mode 2560x1440 --right-of HDMI-0
+```
+
+After 10 months of running my monitors in 1440p, I started tinkering around with
+my i3/Xorg config to try to get [HiDPI](https://wiki.archlinux.org/title/HiDPI)
+to work.
+
+## Scale it up, then scale it down
+
+I wanted to use 4k but scale the interface so it it has the readability of
+1440p.
+
+As I learned, the way to get HiDPI work in Xorg is as follows:
+
+1. Set
+   [`Xft.dpi: 192` in `~/.Xresources`](https://wiki.archlinux.org/title/HiDPI#X_Resources)
+
+   192 means 200% scaling.
+
+   This will make the interface twice as large.
+
+   Starting i3 again after this step made the interface on my monitors the size
+   of 1080p without scaling.
+
+2. Use [`--scale` in `xrandr`](https://wiki.archlinux.org/title/HiDPI#Xorg) to
+   change the resolution of the monitors.
+
+   The value of `scale` needs to follow this equation:
+
+   ```python
+   monitor_resolution = 3840
+   wanted_resolution = 2560
+   dpi_scale = 2
+
+   # wanted_resolution * dpi_scale = monitor_resolution * xrandr_scale
+   xrandr_scale = wanted_resolution * dpi_scale / monitor_resolution
+   xrandr_scale = 2560 * 2 / 3840
+   xrandr_scale = 5120 / 3840
+   xrandr_scale = 1.3333333333333
+   ```
+
+   This way I could initialize my monitor with
+
+   ```sh
+   xrandr --output HDMI-0 --auto --scale 1.33333333333x1.33333333333
+   ```
+
+   and, horray, it works as expected. The text is crisp, but the resolution is
+   4k. In fact, the actual resolution that the graphics card has to render is
+   even greater than 4k.
+
+   ```sh
+   $ xrandr
+   # ...
+   HDMI-0 connected primary 5120x2880+0+0 (normal left inverted right x axis y axis) 621mm x 341mm
+   3840x2160     60.00*+  59.94    50.00    29.97    25.00    23.98
+   # ...
+   ```
+
+3. Set `--panning` in `xrandr` to get the monitors side-by-side.
+
+   Adding `--scale` to my second output and using `--right-of` in `xrandr`
+   caused the screen to overlap - the second displayed a part of the first
+   monitor's screen.
+
+   I used the `--panning` option to tell `xrandr` precisely the range of pixels
+   that I want each monitor show.
+
+   ```sh
+   xrandr --output HDMI-0 --auto --scale 1.33333333333x1.33333333333 \
+     --output DP-0 --auto --scale 1.33333333333x1.33333333333 \
+       --panning 5120x2880+5120+0
+   ```
+
+   The `+5120+0` tells `xrandr` that my `DP-0` (the right monitor) should be
+   transated 5120px to the right. Thus, my first monitor renders horizontally
+   pixels 0 - 5120, and my second monitor renders horizontally pixels
+   5120 - 10240.
+
+I created
+[a script to run these operations](https://github.com/Gelio/ubuntu-dotfiles/blob/6af492edccb7864ebcdbc098e1fe3a06f2f3e5b3/install/i3/stowed/.screenlayout/home-4k/init-layout.sh).
+I run that script each time i3 starts and I need to initialize the monitors.
+
+## Other DPI-related changes
+
+Most applications render well after just setting `Xft.dpi`. There were a couple
+of places in my dotfiles that I had to change the font size, because it did not
+scale with `Xft.dpi`:
+
+- [i3 font size](https://github.com/Gelio/ubuntu-dotfiles/blob/6af492edccb7864ebcdbc098e1fe3a06f2f3e5b3/install/i3/templated-config/stowed-templates/.config/i3/config#L6)
+- [i3 bar font size](https://github.com/Gelio/ubuntu-dotfiles/blob/6af492edccb7864ebcdbc098e1fe3a06f2f3e5b3/install/i3/templated-config/stowed-templates/.config/i3/config#L160)
+- [rofi font size](https://github.com/Gelio/ubuntu-dotfiles/blob/6af492edccb7864ebcdbc098e1fe3a06f2f3e5b3/install/i3/templated-config/stowed-templates/.config/rofi/config.rasi#L6)
+- [GDK applications DPI](https://github.com/Gelio/ubuntu-dotfiles/blob/6af492edccb7864ebcdbc098e1fe3a06f2f3e5b3/install/i3/templated-config/stowed-templates/.xinitrc#L4-L5)
+  (see
+  [GDK 3 section in the HiDPI guide](<https://wiki.archlinux.org/title/HiDPI#GDK_3_(GTK_3)>))
+- [`Xcursor.size`](https://github.com/Gelio/ubuntu-dotfiles/blob/6af492edccb7864ebcdbc098e1fe3a06f2f3e5b3/install/i3/templated-config/stowed-templates/.Xresources#L1)
+- [dunst font size](https://github.com/Gelio/ubuntu-dotfiles/blob/6af492edccb7864ebcdbc098e1fe3a06f2f3e5b3/install/i3/templated-config/stowed-templates/.config/dunst/dunstrc#L94)
+
+## Regular DPI outside my home
+
+I did not want to keep using HiDPI when I did not need it. This would negatively
+impact battery life and generate excess heat by the graphics card, because it
+would have to render 4 times as many pixels while offering no visual benefits.
+
+I opted to use [gomplate](https://github.com/hairyhenderson/gomplate) to
+dynamically generate the configuration that is dependent on DPI. I run
+[the script to generate the config files based on the DPI](https://github.com/Gelio/ubuntu-dotfiles/blob/6af492edccb7864ebcdbc098e1fe3a06f2f3e5b3/install/i3/templated-config/generate-config.sh)
+before executing `startx`.
+
+This way I can easily switch between HiDPI and normal DPI.
+
+## Conclusion
+
+HiDPI is supported when using i3. It requires more work to set up than in other
+operating systems and is less seamless. I did not find a way to dynamically
+change the scaling without exiting i3 and starting it again with updated
+settings.
+
+All in all, the support for scaling it pretty good and after setting it up, I
+have not faced problems with it so far. Applications seems to work and scale
+well.

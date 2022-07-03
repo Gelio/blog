@@ -1,0 +1,2 @@
+I enjoy tinkering with my system configuration and molding Ubuntu into a
+Personalized Development Environment (PDE) that is comfortable for me to use.
