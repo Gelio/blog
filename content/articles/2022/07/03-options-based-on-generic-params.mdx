@@ -1,0 +1,163 @@
+---
+title: Options based on generic parameters
+date: 2022-07-03
+tags: TypeScript
+slug: options-based-on-ts-generic-parameters
+summary:
+  Two approaches to changing the type of an `options` parameter based on a
+  generic function parameter.
+---
+
+At [Splitgraph](https://www.splitgraph.com/) we recently had an interesting
+TypeScript type-related challenge. We wanted to add extra type checks on a
+function that returns results from our
+[Data Delivery Network HTTP API](https://www.splitgraph.com/docs/query/ddn-http).
+The returned data is the result of running an SQL query on Splitgraph. It comes
+in one of 2 shapes
+
+- an array of arrays/tuples (when the API was provided an argument of
+  `rowMode: "array"`)
+- an array of objects (when there was no `rowMode` parameter or it was set to
+  `object`)
+
+Just calling this function cannot infer what the actual objects/tuples will
+contain. It is up to the engineer writing that function call to provide that as
+a generic parameter.
+
+The basic declaration of this function looked like:
+
+```typescript
+declare function execute<RowType extends unknown[] | Record<string, unknown>>(
+  query: string,
+  options?: { rowMode?: "object" | "array" }
+): Promise<RowType[]>;
+```
+
+There is a possible mismatch. There is nothing stopping us from accidentally
+using a tuple `RowType` without specifying `rowMode: "array"`. The same problem
+occurs when using an object as a `RowType` but keeping `rowMode: "array"`.
+
+```typescript
+// ERROR: this will never be an array of tuples because
+// of the missing `rowMode: "array"`
+/** @type {Promise<[string, number][]>} */
+const result1 = execute<[string, number]>("");
+
+// ERROR: this will never be an array of objects because
+// of the extra `rowMode: "array"`
+/** @type {Promise<{ count: number }[]>} */
+const result2 = execute<{ count: number }>("", { rowMode: "array" });
+```
+
+We can solve it in 2 ways:
+
+1. Function overloads
+2. Dynamically-determined `options` type
+
+## Function overloads
+
+[Function overloads](https://www.typescriptlang.org/docs/handbook/2/functions.html#function-overloads)
+is a feature of TypeScript that allows setting multiple function signatures for
+a given function.
+
+Let's use it here.
+
+```typescript
+declare function executeWithOverloads<RowType extends unknown[]>(
+  query: string,
+  options: { rowMode: "array" }
+): Promise<RowType[]>;
+declare function executeWithOverloads<RowType extends Record<string, unknown>>(
+  query: string,
+  options?: { rowMode?: "object" }
+): Promise<RowType[]>;
+```
+
+Here we declare two overloads for the 2 distincs cases (an array vs an object as
+the `RowType`).
+
+Let's check if that meets all our requirements:
+
+```typescript
+import type { Equal, Expect } from "@type-challenges/utils";
+
+const tupleCorrectRowMode = executeWithOverloads<[number, string]>("", {
+  rowMode: "array",
+});
+const objectCorrectRowMode = executeWithOverloads<{ count: number }>("", {
+  rowMode: "object",
+});
+const objectOmittedOptions = executeWithOverloads<{ count: number }>("");
+
+const tupleInvalidRowMode = executeWithOverloads<[number, string]>("", {
+  // @ts-expect-error The row mode should be an array since the rows are tuples
+  rowMode: "object",
+});
+
+const tupleInvalidOmittedOptions =
+  // @ts-expect-error Options are required for tuple rows
+  executeWithOverloads<[number, string]>("");
+
+const objectIncorrectRowMode = executeWithOverloads<{ count: number }>("", {
+  // @ts-expect-error The row mode should be an object since the rows are objects
+  rowMode: "array",
+});
+
+type cases = [
+  Expect<Equal<Awaited<typeof tupleCorrectRowMode>, [number, string][]>>,
+  Expect<Equal<Awaited<typeof objectCorrectRowMode>, { count: number }[]>>,
+  Expect<Equal<Awaited<typeof objectOmittedOptions>, { count: number }[]>>
+];
+```
+
+Everything typechecks without any errors. See
+[the TypeScript playground](https://www.typescriptlang.org/play?#code/CYUwxgNghgTiAEAzArgOzAFwJYHtXxAA9xkMQB1LDACwHkA3EGCHKYAZwB4AlHAdwAqATwAOCImVQd4aANap+qANoBdAHwAKAFDx4AR2RMhALnjsMMLKgDmAGh3wcI7HnamA3vBj8AsjlCmAESwMFBCgfAAvloAlKYACt4AtljsIDz8wmKqagDcWqCQsAgo6C74RCRklDQMTCxsXLyCouKEktLc4DgwwJzmlja2MqjyimqaDgZGpgNWdg5O5ewA-B5evv4ga-CBOABGAFbgGBHRcfCJOClpGS3Z6vlaWEkiPRjwGK3wngCiBlAIMNfoQxJgokhkrsAAJfMQAWjA1EBEBANhA7AA9KQsBB2IEnmBXB8MMgRKiAMI9OCYZp+UDwAC8BGIYFIFCodEYzFYHE4SlQyCS+yYwzmNnUGkCgWG7gc3j49JAQRCYRlWkiMXyRNQ5kcRxOVJgNIwdK2TJZVQ5tW5DT5niJaAwpkFwqYUU00tl8s2AV2B2OmHVmu1xP1gYwtBSGDIwFozlwuotlTZ1U5dR5jU4DpwTpdQpFMA9UsCWq0Wh1etJ5JAAElUPRAVhgGaGcyU+yalz6ryuAKC6KzBZ5pKvT8HJjMfBYex4UQwRg58aevABNQEAr4ElzexqLmIMB4CL4FB8KqhGYrGAEDQN-x2Ce4J8yaj2D7FVsggGTsGyxWw9WqL1o2EDNlGVCxvGyxMhOU4znOoInEu3hFlBiYPsUXggAYWBwIeiAroBd58G+ugdmmNo9lm-ZujAYrDhKnqloSYbfpg9ZEsaJytgg7asp26a2r22bwI6qDOvArqFsWY5yrok7Thgs7zkhTAoau64bHwW47nuyAHkeCCnuGJyXugN6aQqGFPmxSnvkqKrGmq9ghuWcIIGAUBpA+zJKA4IILpw-zIICnAAIJ8FAVAgH07k4Igz41kaJo8Woww0YW9GDNYKg5Gl-mIZgQUAhA4WRdFsWtPFJmYMl3G+iAaU-KJubifmtFRHl9i6AFJzFSFpURVFsacHFCW2eBMYxWhrhNTmeaSQORaRHlWgqPkQA)
+if you want to see it in action.
+
+## Dynamically-determined `options` type
+
+The other solution is more complex. It relies on using
+[conditional types](https://www.typescriptlang.org/docs/handbook/2/conditional-types.html)
+to determine the required type for `options`.
+
+```typescript
+type PossibleRowType = unknown[] | Record<string, unknown>;
+
+type RowMode<RowType extends PossibleRowType> = RowType extends unknown[]
+  ? "array"
+  : "object";
+
+type ExecuteOptions<
+  RowType extends PossibleRowType,
+  ResolvedRowMode = RowMode<RowType>
+> = ResolvedRowMode extends "object"
+  ? // NOTE: return a tuple of arguments to be able to mark `options` as an optional argument
+    [options?: { rowMode: ResolvedRowMode }]
+  : [options: { rowMode: ResolvedRowMode }];
+
+declare function executeWithTypeLogic<
+  RowType extends PossibleRowType,
+  Options extends ExecuteOptions<RowType> = ExecuteOptions<RowType>
+>(query: string, ...options: Options): Promise<RowType[]>;
+```
+
+The fact that the `options` parameter is optional adds a bit to the complexity.
+Instead of just specifying the type for the `options` parameter, we need to use
+a 0-or-1 element tuple maybe containing the `options` type and spread it inside
+the `execute`'s parameters.
+
+It also passes all the tests we defined in the previous section. See
+[this TypeScript playground](https://www.typescriptlang.org/play?#code/C4TwDgpgBACg9gZwQSwEYBsICU4HcAq40AvFAK4B2A1hXhQNoC6UAPlFhAMZwBOAJgB4EwHsgoBzADTlqtXBQB8AbgBQK0JHZ4AsnD4QBOAkSgQAHsAgU+CWIhQZseQpAVRSRl9HOXrtyjR0TFAA-FAARACGPDyRIOFQAFwRcKgAVlzA4arqJgCiZlxklgDyYMDIcBQIhs4mPlY2dkhomJ5E0hwIcOgAbhB8Rrr67lq4wwbtrm4eEN19A0N63haNtuGpGZxZoSpQ+1AA9IdQAHIl+HnJPBDAZDwUUJFQd2CYUHAAZk884mQAtlZgLZgHAoKhoJFHC8wf9olQoAADODlSrVRFPWyRR4oipVSLoH5-QEUYB7A70XFohAhZIAbygPB0y2SXR6-UGzJGAF9mIlyftKaiqgh6YyuRBWXN2YsJVBeTl9Jx0NFoJ9KNs0aZCpxihAAOrIYAACy8ABk4OJkJxasZNA0-M0HG06pBpGU8dVtb4mgUiqVhdVbV4ZlA-bqA56alMIAoFAAKACOZAgPBAyWEogk0gAdHmqSLkh7qQBKZIwJn-ZAISauiBMZRqZD-MC8YAvEwMvLJgnSAqQbbyqCfSsRAACGggAFpOMaCZgJHNDsVkOgENk1Nxqu3XpgAMK8G7bJYjUjmf0Go2mogWq02+gUAEQnjSTNicSMBPhcLSOnkpnjCyETRLE8SSCo3IlqoW7CB86SZAeMSZCeJDahehomualrWgIDLcJQwDJI+-zPvKX4-lAf77ABEzJBs8HbD+EFQSoMHtpsmQlFWwCWHwxYiqM54RpemE3thNp4XABFEU+qZkfG34saxIo7mQbwQAAkhQvQEsgnKAaeaHCRh16QLeOEPrJL5QG+EifgpFFUUcJwTggU7mAOwDuTEvBQPgxrQABUD-MsNnGlJ6B8OCkKPCBcQ2WInDQCagV4FiNwvGpmAIP+Ep0RxjHgZBORsZl6laTp6B6VxRq8fxXrEOSxxQK57lmJ53lMjwUD1elgUQMmyA3FFny+buqW4Dl+xCXqJlYXeAiWSRqaviI772YpJUqXBWzAFp3BIcecpnjqs1XvNOGSdJUDEaR3Lkb+TUucCbUdamXV+QF4q4MFoUIOFZCRdFTw4gx7YoBQSUvF9AF9TtmRTd9tHATEcRMcVaiTlAnCRDWtikPQ5L9pkAjdmQBICAAgrgkRGgMAiTl8ZX7oeyESgo0hLc+q1Zh+DYc0T7Uk2TFPU7TvEM0QTMFcAiFHsAKEc5R2NSaSMnLd13L8+B+zE9spM9ugVM03TgiM98Ms1TxAy9UrV1qzdVnyvzKiMKoQA)
+to play around with this solution.
+
+## Conclusion
+
+I presented two ways that TypeScript offers to have a generic parameter
+influence the type of another parameter in a non-linear way. See
+[this TypeScript playground](https://www.typescriptlang.org/play?#code/PTAEGUHsBsFcBcCWkB2oDuj4AtTwJ4AOApgM6gCGKAJnkcaNJAOaIDGAUBwSaAAqRSpRACNoxAEqR0AFXqgAvKFgoA1imkoA2gF1QAH1ATibSACdqAHlLwziFMwA0ytRvQoAfAG4uPBlPQAWUhqYksAuV5iAA94YhpyASFRcQj6D0UjaUiGGLiEl3VNXVAAflAAIgozMwp8CtAALkrIEQArE3gKn255AFFokwRiAHlCJFRScOz5PPjqRMFhMUkZkmdjUhgAN2JqAODQzIOQsLSSDwylTZ29k6O5gorWjrYuso5QL9AQUAA5EYyPrNMzEeCwMxoCh4WCEcSgSAAM0oZmYsAAtvF4OR4JBQCIGBQVng8ejqqpQAADSDjZAoUiUyjkKgI2moCjQFFozEoeCfb5aGkTemlZoAb1AZmkh2IzRu0F2+2lp1AAF89I1+V9BWz6eLJcrQnKyLclUEVeqeqE2NBqgxESo3nTQDEhnEAOpYbA5AAyLHY01ks1i80WyRW52IzjGwvIjwWoAGbtGuqmkauicGbGGMbpabWxEuAAoAI6wYhmfDNGx2BzOAB0jaFeeaucmAEpmnwpejEKQzgXdN4uL8oHBhRgvQjdmYmBQFlxrbbQaAHSgnagXVnhp6cCMZ3OFoGclv8gmVEV3EPS+XK9XbPYnKzY-qpeajZVqrV6qrO-we32A5BiQQ4+Eudqro6E6utmHpevuFaHvmwG5CGBTGKYFjWA+daFG4ngeDeFZVqANaPs4zaTKKoASm+MrUc87SdBUv5dgB-bHvQoFcBwvwyGQ2IcIg6KEOY8B0LwEp9GWHLOAMJBvGqq49qAADkAACfgALRsNgHLiA4ZDAAgiDQKQqkjmA4CYPAun4mC6DEPEW7Jru2AIbOkDzsyNAubBxBub6-psCSoC6SYFI4BQ4kiJAOCkTAJmTBg5iqBwpj0uJMHDJk2VwXuB5eQsPQZTYMJwsQADC5igm89wMEoeVhFoKAYgSZjOGRDg6IRFQVM4tGGrKn41HUDS-j4pXiS8nTVTUnT1bl25xJYEqmCo8DNK16LtWqvX9TRBrvsNjGvO8E3pZM01MW8Iy9vAcTUG29JLcmq1hZAG1bW1FZ7UWfXtiVV3leIACSKDbByiBmjKr3+ZYLU-R1pE4cwPX-QdYpaj8YCaaQWkxAp8AEzU5igDI2AMG+oDoiqpDYJ90C0ASlBQqN+CkfYbAMDgVPSMyK7ghVpDY3RpzNKdzEcBdl2ZSDxDg5D0DQ3dWCPc95AKNjvx4wT0REyTUpmKAGsolTxBlogoK0IiZNC-Cb4i98fnDAj23tZ1qPowDQNyzNbzg5htXwItjXLWEa2fby307b9qr7QN2u49iesGxWRvk5TR003TDOwEz9mswiN3icI6481njtm8XZ1O98YsflU7MVNLgO+PIbAUP2mugFo2PyZ0ljSbAHKWAAgugFBYHslh+Ei8tzcH9UeM4iOx8jXVo0OK-9-rg-D6PE9T49s-0PP-vwIvC1DSvh3rdHoDu3H2+OLvRNDzJ0Dj5P09WHPyIX1Vg9PYGtb6Ry+o-JGaoX4cB0F4IAA)
+to compare those approaches.
+
+Overall, using function overloads turned out to be simpler in this case. It was
+much easier to make `options` optional in that case. Moreover, function
+overloads should offer better documentation and error messages compared to
+conditional types.
