@@ -11,7 +11,7 @@
     "lint": "next lint",
     "check-types": "tsc --noEmit",
     "create-indexes": "esno ./content-processing/create-indexes.ts",
-    "copy-static-content": "rsync -avh --exclude='**/*.mdx' content/articles/ public/static-content/"
+    "copy-static-content": "rsync -avh --delete --exclude='**/*.mdx' content/articles/ public/static-content/"
   },
   "dependencies": {
     "@emotion/react": "^11.9.0",
