@@ -1,0 +1,4 @@
+Neovim is a modern extensible vim-based text editor.
+I switched to it from Visual Studio Code and use it as my main text editor/IDE.
+The main differentiators are the fact that Neovim allows configuring it and
+writing plugins in Lua, as opposed to the Vimscript language.
