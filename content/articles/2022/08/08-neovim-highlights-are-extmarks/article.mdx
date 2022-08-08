@@ -1,0 +1,115 @@
+---
+title: Neovim highlights are extmarks
+date: 2022-08-08
+tags: neovim
+slug: neovim-highlights-are-extmarks
+summary:
+  While trying to contribute to
+  [nvim-ts-rainbow](https://github.com/p00f/nvim-ts-rainbow) I discovered that
+  _highlights_ in Neovim are implemented using _extmarks_.
+---
+
+TL;DR:
+[`vim.highlight.range()`](<https://neovim.io/doc/user/lua.html#vim.highlight.range()>)
+and
+[`vim.api.nvim_buf_add_highlight()`](<https://neovim.io/doc/user/api.html#nvim_buf_add_highlight()>)
+are implemented by using
+[extmarks](https://neovim.io/doc/user/api.html#extmarks). I did not find this
+information in the Neovim docs and it took me an hour to make this connection.
+[Proof](https://github.com/neovim/neovim/blob/feba56af7d032c948a78c21735502bebe45f8361/src/nvim/api/extmark.c#L907).
+
+---
+
+[nvim-ts-rainbow](https://github.com/p00f/nvim-ts-rainbow) is a great Neovim
+plugin that highlights matching parentheses in matching colors. Nested
+parentheses are highlighted in a different way, so it looks like a rainbow (or
+whatever colors you configure) in the end.
+
+It has also a notion of an `extended_mode` that also highlights JSX tag names.
+This makes the following code:
+
+```tsx
+<StyledArticleCardContainer className={className} as="article">
+  <StyledArticleCardTitle as={titleAs}>{title}</StyledArticleCardTitle>
+
+  <ArticleMeta
+    readingTimeMin={readingTimeMin}
+    createdDate={createdDate}
+    tagNames={tagNames}
+  />
+
+  <div>{summary}</div>
+
+  <Link href={getArticlePagePath(slug)} passHref>
+    <Button>Read more</Button>
+  </Link>
+</StyledArticleCardContainer>
+```
+
+be highlighted in the following way:
+
+![Screenshot of the prior JSX code with matching JSX tag names highlighted using
+the same color. Tags on different levels of nesting are highlighted in different
+colors](/static-content/2022/08/08-neovim-highlights-are-extmarks/jsx-rainbow-highlight.png)
+
+## The bug
+
+There was
+[one particular `nvim-ts-rainbow` bug](https://github.com/p00f/nvim-ts-rainbow/issues/118)
+that irritated me for some time. The problem was that with `extended_mode`
+enabled, the rainbow highlight would include not only the JSX tag names and the
+angle brackets, but also the props. In other words, instead of the expected
+highlight, the code looked like this:
+
+![Screenshot of that same code from earlier. JSX is highlighted in rainbow
+colors but the highlight includes the props. JSX self-closing elements are not
+highlighted at
+all.](/static-content/2022/08/08-neovim-highlights-are-extmarks/bug-jsx-props-are-highlighted.png)
+
+Notice that the props of JSX elements are highlighted in the same way tag names
+are. This makes them easy to spot, but we lose information this way. For
+example, notice that `getArticlePagePath` is highlighted in green on the first
+screenshot, making it stand out more, since it is a function that is called. it
+does not stand out as much in the second screenshot.
+
+Moreover, JSX self-closing elements (`ArticleMeta` in this case) is not
+highlighted by `nvim-ts-rainbow` at all.
+
+### The solution
+
+In case the bug description interested you and you would like to see the fix, it
+is in [this PR](https://github.com/p00f/nvim-ts-rainbow/pull/125).
+
+The solution involved rewriting some
+[treesitter queries](https://tree-sitter.github.io/tree-sitter/using-parsers#pattern-matching-with-queries)
+to only capture JSX tag names and not the entire tags.
+
+## Accessing Neovim highlights programmatically
+
+After fixing that bug I wanted to add some tests to make sure the highlights are
+correct. This meant accessing the highlights programmatically.
+
+I knew that
+[nvim-ts-rainbow added the highlights using `vim.highlight.range`](https://github.com/p00f/nvim-ts-rainbow/blob/d16220f825c0521586499fac340b8a5c8b7117b0/lua/rainbow/internal.lua#L85-L96).
+I had no clue how to then access these highlights. I looked through
+[`:h vim.highlight.range`](<https://neovim.io/doc/user/lua.html#vim.highlight.range()>)
+and
+[`:h nvim_buf_add_highlight`](https://github.com/p00f/nvim-ts-rainbow/blob/d16220f825c0521586499fac340b8a5c8b7117b0/lua/rainbow/internal.lua#L85-L96)
+but I did not find any functions that would return the highlights.
+
+Only after I read
+[the source code of `nvim_buf_add_highlight`](https://github.com/neovim/neovim/blob/feba56af7d032c948a78c21735502bebe45f8361/src/nvim/api/extmark.c#L907)
+I understood that Neovim highlights are implemented using _extmarks_, which are
+well documented ([`:h extmarks`](https://neovim.io/doc/user/api.html#extmarks))
+and easy to access programmatically
+([`:h nvim_buf_get_extmarks()`](<https://neovim.io/doc/user/api.html#nvim_buf_get_extmarks()>)).
+
+Equipped with this information, I was able to
+[implement automated tests for `nvim-ts-rainbow` highlighting](https://github.com/p00f/nvim-ts-rainbow/pull/127).
+
+## Conclusion
+
+If anyone is looking for a way to programmatically access Neovim highlights
+defined with `vim.highlight.range` or `nvim_buf_add_highlight`: highlights are
+implemented with extmarks. Use `nvim_buf_get_extmarks` to get extmarks
+(highlights) defined within a given range.
