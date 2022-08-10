@@ -1,0 +1,203 @@
+---
+title: Fixing accidental git submodule changes
+date: 2022-08-10
+tags: git
+slug: fixing-accidental-git-submodule-changes
+summary:
+  How to fix unintentionally changing a git submodule hash to leave no trace of
+  a mistake on your branch.
+---
+
+Finally, you are done making all the chagnes to implement a feature. You care
+about git commit hygiene. You split your work into self-contained commits. You
+push it to your git hosting provider, create a merge/pull request, and then, the
+terrifying moment comes. You look at the changes in your MR/PR and see an
+unintentional change to
+[a git submodule](https://git-scm.com/book/en/v2/Git-Tools-Submodules) you have
+in the repository.
+
+> Oh no...
+
+You think to yourself and start looking for a guide how to clean it up to keep
+your commits pristine.
+
+If you found yourself in such a predicament, or are interested in how to solve
+such a situation, read on.
+
+## Disclaimer
+
+I will assume the MR/PR is targeted at the `main` branch and use that name in
+the commands/descriptions.
+
+I will also assume that the git submodule that was accidentally modified is
+located at the `src/py` path of the repository.
+
+## The options
+
+To revert that change we have 2 options:
+
+1. Remove the submodule hash change from the commit that introduced it in the
+   first place.
+
+   This rewrites history. The benefit is that there will be no trace of the
+   submodule being modified by you.
+
+   This is the solution you want if you can modify the history of your branch.
+   If the change is already merged into your `main` branch, then it is best to
+   avoid modifying history so others do not have to follow suit.
+
+2. Add a new commit that changes the submodule hash back to the one from `main`.
+
+   This would leave you as one of the people who modified `src/py`, even if
+   unintentionally. This would manifest itself in `git log` and `git blame`
+   commands, to name a few.
+
+   This solution does not rewrite history, so it is viable even after the commit
+   in question is already merged into `main`.
+
+Since the MR/PR is not merged yet, it is safe to rewrite history. This is a
+superior solution, so let's see how to do that.
+
+## Which commit modified the submodule
+
+First, we need to know which commit modified the `src/py` submodule.
+
+On your branch, from the root of the repository execute the following:
+
+```sh
+$ git log origin/main.. -p -- src/py
+commit 56e170e0623fd44317d15d0c3d5fe9dba99866ae
+Author: You <you@you.com>
+Date:   Fri Aug 5 20:31:01 2022 +0000
+
+    Implement time to money conversion
+
+
+Δ src/py
+41ba349..d2147f9
+```
+
+This gives us the list of commits that modified the `src/py` path. The range of
+such commits is limited to the ones leading from `origin/main` to your branch
+(in essence, the ones "on your branch", or, in other words, what your MR/PR
+contains). There is only one such commit
+(`56e170e0623fd44317d15d0c3d5fe9dba99866ae`).
+
+## Reset the submodule hash
+
+To reset the submodule hash to the one that exists on `main`, let's execute:
+
+```sh
+$ git checkout origin/main -- src/py
+$ git status
+HEAD detached at a64e77589
+Changes to be committed:
+  (use "git restore --staged <file>..." to unstage)
+          modified:   src/py
+
+          Changes not staged for commit:
+            (use "git add <file>..." to update what will be committed)
+              (use "git restore <file>..." to discard changes in working directory)
+                      modified:   src/py (new commits)
+
+$ git diff
+
+Δ src/py
+41ba349..d2147f9
+
+$ git diff --staged
+
+Δ src/py
+d2147f9..41ba349
+```
+
+Weird, right? `git status` says there is a staged change to the `src/py`
+submodule, and an unstaged one. The staged change reverts the submodule back to
+`41ba349` (on `main`). The unstaged change is exactly the same as you
+accidentally committed.
+
+This is because we told git that the submodule should be the same as on `main`,
+but due to how submodules work, it didn't introduce the changes to the
+filesystem yet. To do that, we need to do `git submodule update --recursive`
+
+```sh
+$ git submodule update --recursive
+[...]
+
+$ git status
+HEAD detached at a64e77589
+Changes to be committed:
+  (use "git restore --staged <file>..." to unstage)
+        modified:   src/py
+
+$ git diff --staged
+
+Δ src/py
+d2147f9..41ba349
+
+$ git submodule status
+ 8b2083ae4cb2d37701183fab36f6fa608108bc00 docs (remotes/origin/HEAD)
+ 41ba34962738db754a791f905003d1df02c50e77 src/py (v0.3.12-2-g41ba3496)
+```
+
+Now, it is correct. The submodule is checked out at the same commit as on
+`origin/main` and we have that submodule hash change staged in git.
+
+## Fixup-committing the revert
+
+Now we need to amend the commit that accidentally changed the submodule
+(`56e170e0623fd44317d15d0c3d5fe9dba99866ae`) with the staged changes.
+
+If it was the latest commit, it would be as simple as doing
+`git commit --amend`.
+
+What if it is not the latest one? We need to commit the staged changes into a
+separate commit and then do `git rebase` to `fixup` the commits:
+
+```sh
+$ git commit -m "fix accidental src/py submodule change"
+$ git rebase -i 56e170e0623fd44317d15d0c3d5fe9dba99866ae~
+# move the "fix accidental ..." commit below
+# 56e170e0623fd44317d15d0c3d5fe9dba99866ae and change the command to fixup
+```
+
+Note the syntax used to specify the base commit of the rebase. We provided the
+commit hash that contains the unintentional submodule change **suffixed with**
+`~`. This is
+[a _gitrevision_](https://git-scm.com/docs/gitrevisions#Documentation/gitrevisions.txt-emltrevgtltngtemegemHEADmaster3em)
+that tells git to use **the parent** of that commit as the base.
+
+Instead of doing the manual work of moving the commit to the right place in the
+rebase plan, we can let git help us here, since we know the hash of the commit
+we want to fixup:
+
+```sh
+$ git commit --fixup 56e170e0623fd44317d15d0c3d5fe9dba99866ae
+$ git rebase -i --autosquash 56e170e0623fd44317d15d0c3d5fe9dba99866ae~
+```
+
+Notice that when `git rebase` opens the rebase plan, the new commit is already
+in the right place and its command is set to `fixup`. We can accept that plan
+and the rebase should be successful.
+
+Since we didn't have to modify the rebase plan, we could leave out the `-i`
+(`--interactive`) interactive flag. I usually still review the plan before I
+execute a rebase, but with such simple fixups, you may as well omit it.
+
+## Verification
+
+After we fixup that commit, we should no longer see `src/py` modified on our
+branch:
+
+```sh
+$ git log origin/main.. -p -- src/py
+# empty output
+```
+
+Horray 🎉 There are no commits leading from `origin/main` to the current HEAD
+(the commit you have checked out) that modify `src/py`. Now it is just a matter
+of `git push --force-with-lease` (force, since we modified history) and we are
+done!
+
+Keep in mind this is not the only way to revert an accidental change, but it is
+one that works reliably for me.

@@ -1,0 +1,3 @@
+A distributed version control system that I work with on a daily basis. GitHub,
+GitLab, BitBucket, and similar hosting providers offer centralized repository
+hosting that facilitates a great deal of open source software development.
