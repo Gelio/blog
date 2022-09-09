@@ -1,0 +1,313 @@
+---
+title: Representing wizard state in TypeScript
+date: 2022-09-09
+tags: TypeScript
+slug: representing-wizard-state-in-typescript
+summary:
+  My solution to describing the state of a multi-step wizard in TypeScript.
+---
+
+While converting
+[the Externals workflow](https://www.splitgraph.com/connect/data) at Splitgraph
+from a standalone set of pages into the Splitgraph Console, the natural action
+to do was to make the set of pages into a multi-step wizard. During that process
+I had to somehow represent the state of the wizard given some constraints and
+assumptions.
+
+## Wizard behavior assumptions
+
+Here are general assumptions about the UI and behavior of the wizard. Most of
+them are natural, but it is worth writing them down so we know what requirements
+we are working with.
+
+1. The wizard has multiple steps 1, 2, ..., `N` (where `N` &gt; 1).
+1. The wizard displays only a single step at a time.
+1. The user can go forward from step `i` to step `i+1` (where `i` &lt; `N`).
+1. The user can go back from step `i` to step `i-1` (where `i` &gt; 1).
+1. Each step relies on some information provided to it from previous steps (or
+   from an external source, like the URL, if it is the first step).
+
+## Steps state
+
+Given all of the requirements above, I came up with the following idea of steps
+state representation.
+
+Given a wizard with `N` steps where each step has its own state, if a user is on
+a step `i`, this means:
+
+1. The state for steps 1, 2, ..., `i` must be available.
+
+   The user must have visited these steps prior to moving to step `i`, because
+   the user is allows to go forward only one step at a time.
+
+1. The state for steps `i+1`, `i+2`, ..., `N` can be, must does not have to be
+   available.
+
+   The user could have gone to a further step, and then came back to step `i`.
+   This is why the state of the following steps is optional in the wizard state.
+
+   The state of a step is not erased when going back so that a previous step can
+   optionally use it. In the Externals wizard case, if the user picked an
+   external plugin on step 1, filled in the connection information on step 2,
+   went back to step 1 to maybe change the plugin, but they changed their mind
+   and went forward to step 2. Since the first step knows that the plugin did
+   not change (the second step's state says it is still the same plugin), it can
+   initialize the connection information form with the previous data instead of
+   having the user fill it out again.
+
+   This approach offers improved user experience, but makes it more difficult to
+   write a TypeScript type to correctly represent this scenario.
+
+## TypeScript representation of the state
+
+### Individual steps state
+
+Let's assume we have 3 steps with the following types describing their state:
+
+```typescript
+interface SelectPluginStepState {
+  initialExternalPluginName: string | undefined;
+}
+
+interface ConnectionDetailsData {
+  credentialId: string;
+  paramsFormData: Record<string, unknown>;
+}
+
+interface ConnectionDetailsStepState {
+  externalPluginName: string;
+  initialFormState: ConnectionDetailsData | undefined;
+}
+
+interface PreviewStepState extends ConnectionDetailsData {
+  externalPluginName: string;
+}
+```
+
+### Complete wizard steps state
+
+The final state of the wizard, after all the steps are filled in, looks as
+follows:
+
+```typescript
+interface ConnectExternalPluginWizardStepsState {
+  selectPlugin: SelectPluginStepState;
+  connectionDetails: ConnectionDetailsStepState;
+  preview: PreviewStepState;
+}
+```
+
+What we want is a TypeScript type that takes in this complete wizard steps state
+and a step name (e.g. `connectionDetails`) and returns the following type:
+
+```typescript
+interface WizardStepsStateAtConnectionDetailsStep {
+  selectPlugin: SelectPluginStepState;
+  connectionDetails: ConnectionDetailsStepState;
+  preview?: PreviewStepState;
+}
+```
+
+Notice that the state for the first 2 steps is required, but the state of the
+third step is optional - the user could have visited that step and went back.
+
+### Wizard state at a given step
+
+To make it work, we need the following `WizardStateAtSomeStep` type:
+
+```typescript
+/**
+ * Returns wizard steps state at step `StepToLookFor`.
+ * Assumes that a wizard at a particular step has all the state for the
+ * previous step and the current step, and could have state for the following
+ * steps (if the user visited them and then went back to a previous step).
+ *
+ * The state of steps before `StepToLookFor` is required,
+ * because these steps were already completed.
+ *
+ * The state of the `StepToLookFor` is also required.
+ *
+ * The state of steps after `StepToLookFor` is optional. These steps could
+ * have been visited by the user and then the user may have came back to an
+ * earlier step. These steps may also not have been visited by the user at all.
+ *
+ * In other words, for a wizard with steps 1..N, for the current step M, this
+ * type assumes that the state for steps 1..M (inclusive) are **required**, but
+ * the state for steps (M+1)..N is optional.
+ *
+ * Relies on `RemainingSteps` for the order of steps.
+ */
+type WizardStateAtSomeStep<
+  CompleteWizardStepsState,
+  AccumulatedWizardState,
+  /** Whether `StepToLookFor` was previously matched in the `RemainingSteps` array */
+  StepPreviouslyMatched extends boolean,
+  RemainingSteps,
+  StepToLookFor extends keyof CompleteWizardStepsState
+> =
+  // Implementation notes:
+  // The type recursively analyzes `RemainingSteps` one by one.
+  // For each step, we either `Pick` that step's state as required or as
+  // `Partial`.
+  // That depends on whether the `StepPreviouslyMatched` (or the `CurrentStep`
+  // matches) `StepToLookFor`.
+  RemainingSteps extends [
+    infer CurrentStep extends keyof CompleteWizardStepsState,
+    ...infer RestSteps
+  ]
+    ? StepToLookFor extends CurrentStep
+      ? WizardStateAtSomeStep<
+          CompleteWizardStepsState,
+          AccumulatedWizardState & Pick<CompleteWizardStepsState, CurrentStep>,
+          true,
+          RestSteps,
+          StepToLookFor
+        >
+      : StepPreviouslyMatched extends true
+      ? WizardStateAtSomeStep<
+          CompleteWizardStepsState,
+          AccumulatedWizardState &
+            Partial<Pick<CompleteWizardStepsState, CurrentStep>>,
+          true,
+          RestSteps,
+          StepToLookFor
+        >
+      : WizardStateAtSomeStep<
+          CompleteWizardStepsState,
+          AccumulatedWizardState & Pick<CompleteWizardStepsState, CurrentStep>,
+          false,
+          RestSteps,
+          StepToLookFor
+        >
+    : StepPreviouslyMatched extends true
+    ? AccumulatedWizardState
+    : // NOTE: this branch is hit when `CurrentStep` does not match any
+      // `OrderedConnectExternalPluginWizardSteps`. This should never happen due
+      // to TS type constraints, but the ternary operators still expect some
+      // expression here.
+      RemainingSteps;
+```
+
+Let's now use these types for our wizard:
+
+```typescript
+/** A helper type to make sure all tuple elements are assignable to `T`. */
+type OrderedTuple<T, Tuple extends T[]> = Tuple;
+
+/**
+ * Simplifies a type to its most basic representation.
+ *
+ * @see https://github.com/ianstormtaylor/superstruct/blob/41d7fdd09a0c0f0291b03357e487420d4ece6b56/src/utils.ts#L319-L325
+ */
+type Simplify<T extends Record<string, unknown>> = {
+  [Key in keyof T]: T[Key];
+} & {};
+
+/** Externals wizard step names */
+export type ConnectExternalPluginWizardStep =
+  keyof ConnectExternalPluginWizardStepsState;
+
+/** A helper type to make sure all tuple elements are assignable to `T`. */
+type OrderedTuple<T, Tuple extends T[]> = Tuple;
+
+/** Externals wizard step names in the order of appearance */
+type OrderedConnectExternalPluginWizardSteps = OrderedTuple<
+  ConnectExternalPluginWizardStep,
+  ["selectPlugin", "connectionDetails", "preview"]
+>;
+
+export type ConnectExternalPluginWizardStepsStateAtStep<
+  Step extends ConnectExternalPluginWizardStep
+> =
+  // NOTE: using `Simplify` resolves the union into an object
+  // which makes it easier to read and work with.
+  Simplify<
+    WizardStateAtSomeStep<
+      ConnectExternalPluginWizardStepsState,
+      // NOTE: Record<string, never> does not intersect well with other objects.
+      {},
+      false,
+      OrderedConnectExternalPluginWizardSteps,
+      Step
+    >
+  >;
+```
+
+We had to declare the order of wizard steps (because it is not obvious from the
+complete wizard state object). We can now use the
+`ConnectExternalPluginWizardStepsStateAtStep` type to get the wizard state type
+for a given step, just like we wanted:
+
+```typescript
+type WizardStepsStateAtConnectionDetailsStep =
+  ConnectExternalPluginWizardStepsStateAtStep<"connectionDetails">;
+```
+
+TypeScript evaluates it to:
+
+```typescript
+type WizardStepsStateAtConnectionDetailsStep = {
+  selectPlugin: SelectPluginStepState;
+  connectionDetails: ConnectionDetailsStepState;
+  preview?: PreviewStepState | undefined;
+};
+```
+
+which is just what we needed.
+
+## Possible wizard state variants
+
+One more type that may come in handy is describing all possible variants of
+state that a wizard can be in:
+
+- the current step name
+- the state at this step
+
+This can be done with the following mapped object type:
+
+```typescript
+/**
+ * Variants of the entire wizard's state.
+ * There is a separate variant of the wizard's state for each step.
+ *
+ * @see WizardStateAtSomeStep
+ */
+export type ConnectExternalPluginWizardState = {
+  [Step in ConnectExternalPluginWizardStep]: {
+    step: Step;
+    stepsState: ConnectExternalPluginWizardStepsStateAtStep<Step>;
+  };
+}[ConnectExternalPluginWizardStep];
+```
+
+TypeScript resolves that to a union of objects, one wizard step represented by
+one object. You can use that type to hold the information about the wizard, for
+instance in a React hook:
+
+```typescript
+import { useState } from "react";
+const [wizardState, setWizardState] =
+  useState<ConnectExternalPluginWizardState>({
+    step: "selectPlugin",
+    stepsState: {
+      selectPlugin: {
+        initialExternalPluginName: undefined,
+      },
+    },
+  });
+```
+
+## TypeScript playground
+
+You can play around with the code from this article live in
+[a TypeScript playground](https://www.typescriptlang.org/play?#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-hVCrUZVIFFkR9wvLeR8r5VRm4AEc3BkCIU-diUhRhss7lFMS0DHDwsXrQeQWiDJcvlexRVSLVrwieXALV7zPlNCbn0amGxHCGuNdIN1HElWylMIy5AmgNCV01a8-1uq+icFgFuN0nRFXWsZXpUlzDyWCCkFWUAHL2BOBcPCNlzQcUCtZVFZoN15AlqZJYIR+BxUbDGMwuo1AQhsy+Lm0o+bpatvhQgDYYDOTIApWWvglauXOHkLW5tChThPSjUYPg7xSjNDXnQBARQqXAuMpvYgjLHG6F0JkU9TRcVimFd1AAskUEothmHtIUH8gFJQHnwi4six917b2vqZRkfAKRwTtzyAoO1LEw1GqISxIoEhXjfs4mlEDnxpaBFfQAakcXKu9erM3ZoSFGwcQ6uB8AiIOG6GRoRhSblSlm8NmgqoCK5Np0Nj4wFPkHC+St9J+BgDnb4b4sFHXwKKdw0KuUCbwQXQ61FSiIJ9bAP1OrA39FYBi6VswbqQCIE4JZ3rGO-h4CxgITcaCgnkP1O0+5aooiM7IV9qAzP0FTjjZw7y-BjCwVZ5jlIKHJ2eam3TzQ-OsBWaYdMrDDKSZKgIPOi0X5gCMMlz6Moe5gJED6Ee0aI5jUcHi2DBpHhulkBQDuDHoBMZs+FuzZxS1TEuNvRUz4WgECvYwIoQqWjsAPZXRI49QhNwAyqOAapgPmWQxG+gj6WAlYiIkCFNYPDfKyxxB5whahp3mICPMY3vWubgh5rzpnSi0CboER93rUzPvUPuCIJWTNmYQPBrTOmA3UF2x-Jr1nbNwFYHF0AeMaFqE0GzF7+LhUp2dGnBLH5ksSfvuD6TMPb26AyHD5og4kBhXvE7K+AB+CAUXtUA96WnBH4pqHP1AFT5TQnz6JxhyzpLLroCpZxyzq+sn5OeHqMp-ZoAJvdpHLz8T-OsdScfmuV7Cc4BzkoSz28bgVNC8PsTtX3xNfPxTbT583PD50JZ-FRgbnMWTBuz5+n-ntdlBZ2z++J8A7Ca53r6+YmUuK7SzAY3wu5P-LF0pz3lQ9kW5Z5t6gj4PAjml6EWXAfMfkIfgIIojOkeMAmaHw+rui92gNxFv31PfXRYB3H0AVvn5+nZ97zncBL567l4HrP2PH517tCLiPinpAS4Oan9PGOFfd6VznlXiO3sF9L8i6muu-fl4CIv03aamh14b3aG3cA7fXe83d53NxqA65h1TgfCnxfR7d4fP0r8S5+k-awCQoJebED6L0U4p36N5-nzgCbmAVAXeFcGPz5VkAt0VAiEIWFiyhVlvmmiD3BjUjsC5FJX-nbmaGYC5nLWEnvyvkVFuC6HADK0EFNkbGsw4HQ1eERSIgeDmHOlQCaGlALGekGiFDMEsGgLAEGkcD+h7gPT0At1Cxa1SDCmORamYQADUaBdFFgvV8RhUI1rk6B5s0pXJo07Vg0lBWxQRKgkR5Cxg3heJ8QQVaANDVAqVWgBsOg2IZFvZQBm8z5g5GBWkBpoghpE9yD05EDSFkCs9VApkZk5olkSF-JxZs5Fd1lpkYcvh99YAMo7Rbk3x8oEDo5AjZps9BNDcRx9wXY7Qjk4w8YIj2oyFsi4AdlXZDB5o6j6iGjGimjmiWjWi2j2iOjDBkgBhUg+RgJaiOjBihjhiRjmiEwf0Bc0p-ZlYsJio5pMs-DMj1Yp9g9oBT5E4TYEDZicIEAdYGFd5w4rQQwopkJYxkU+ReUdZF4jQdYYxKDTg8YLDpMlBIBlMCZ847Q2U3x08zZ-DIis4go785xAhjwUjGA-Q9ZoojRDZKFUi0o-RQTD59YYpkoES69mMk8ljLxvQy4wxQJpBjdMEYciSii8gowgA).
+
+## Conclusion
+
+Wizards come in different shapes and sizes. I hope I captured the requirements
+that make it possible to implement most wizard types and offer the best user
+experience possible.
+
+The remark about future steps state being optional is non-trivial to arrive at
+and makes the implementation more involved, but allows offering superior user
+experience to only remembering the previous steps state.
