@@ -12,6 +12,8 @@ const withMDX = withMDXFactory({
   },
 });
 
+const matomoOrigin = process.env.MATOMO_ORIGIN;
+
 /** @type {import('next').NextConfig} */
 const nextConfig = {
   reactStrictMode: true,
@@ -19,6 +21,18 @@ const nextConfig = {
     locales: ["en"],
     defaultLocale: "en",
   },
+  rewrites: async () => [
+    {
+      // Proxy Matomo requests in an attempt to work around ad blockers
+      source: "/tr/mat.js",
+      destination: `${matomoOrigin}/matomo.js`,
+    },
+    {
+      // Proxy Matomo requests in an attempt to work around ad blockers
+      source: "/tr/mat",
+      destination: `${matomoOrigin}/matomo.php`,
+    },
+  ],
 };
 
 export default withMDX(nextConfig);
