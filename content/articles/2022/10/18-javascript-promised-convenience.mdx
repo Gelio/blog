@@ -1,0 +1,349 @@
+---
+title: JavaScript's promised convenience
+date: 2022-10-18
+tags: JavaScript
+slug: javascript-promised-convenience
+summary:
+  JavaScript `Promise`'s `then` function offers extra convenience. Is it
+  harmful, though?
+---
+
+The introduction of `Promise`s in JavaScript was a great usability improvement
+when working with asynchronous code. They are usually much easier to comprehend
+compared to callbacks (see [callback hell](http://callbackhell.com/)). It is not
+a new concept, though. Other languages have similar abstraction to handle
+asynchronous computations that eventually return a value:
+[Rust has Futures](https://doc.rust-lang.org/std/future/trait.Future.html),
+[so does C++](https://en.cppreference.com/w/cpp/thread/future),
+[C# has Tasks](https://learn.microsoft.com/en-us/dotnet/api/system.threading.tasks.task-1?view=net-6.0),
+and
+[so do many other languages](https://en.wikipedia.org/wiki/Futures_and_promises#List_of_concepts_related_to_futures_and_promises_by_programming_language).
+
+I will explore how the JavaScript implementation of Promise-chaining has an
+extra functionality that seems like a convenience, but proves difficult to work
+with in some cases, for example [zx scripts](https://github.com/google/zx). This
+makes `Promise` diverge from the monad definition.
+
+## Chaining Promises
+
+Naturally, `Promise`s can be chained using
+[the `then` method](https://developer.mozilla.org/en-US/docs/Web/JavaScript/Reference/Global_Objects/Promise/then).
+
+```typescript
+function getRandomInteger() {
+  return Math.round(Math.random() * 50);
+}
+
+function delay(ms: number): Promise<void> {
+  return new Promise((resolve) => setTimeout(resolve, ms));
+}
+
+function getDelayedRandomInteger(): Promise<number> {
+  return delay(1000).then(getRandomInteger);
+}
+
+// Print a random integer (multiplied by 2) after one second
+getDelayedRandomInteger()
+  .then((integer) => integer * 2)
+  .then(console.log);
+```
+
+If we break it down into steps, it could look like so:
+
+```typescript
+const randomIntegerPromise = getDelayedRandomInteger();
+const doubledRandomIntegerPromise = randomIntegerPromise.then((value) => {
+  return value * 2;
+});
+doubledRandomIntegerPromise.then(console.log);
+```
+
+Looking at this syntax and ignoring other knowledge I have about the behavior of
+`then`, I can conclude that the callback provided to `then` will receive the
+value of the `Promise` it is attached to. Whatever the callback returns will be
+the value the final `Promise` resolves with.
+
+To be concrete, `randomIntegerPromise` will resolve with some random integer,
+which will be passed as an argument (`value`) to the arrow function which
+returns the doubled value. That doubled value will be the value
+`doubledRandomIntegerPromise` resolves with.
+
+All good so far. What if we wanted to chain another asynchronous operation?
+Let's use that random integer as a person ID and get that person details from
+[the Star Wars API](https://swapi.dev/).
+
+```typescript
+getDelayedRandomInteger()
+  .then((id) => fetch(`https://swapi.dev/api/people/${id}`))
+  .then((response) => response.json())
+  .then(console.log);
+```
+
+A point for you if you noticed we are using the same `then` method to chain
+promises but now the function returns asynchronous operations, aka `Promise`s
+(both `fetch` and `response.json()` return `Promise`s).
+
+It still works, though. You can
+[try it in the TypeScript playground](https://www.typescriptlang.org/play?#code/GYVwdgxgLglg9mABAcwKZQEoEMwBM4C2AkmFKmgE4AUAlIgN4BQiiF6IFSAsllABYA6CnHC4qPfkJz4CtRACpEAVgAMNANyMAvo0ahIsBIlyoANlgCeVAgGcAXIjAgCAI1QUaDgArCCMG6gAPABucDC4AHwMzKzsnI6oAO6IPoT+qFRUbDZwpsGodAC8UQFQACowBKgiUFmoOXmoADSItjQa2rr60PBIaFAAImaWqLjYeIQkZJS03r7pgU6u7lFMLGxQHEgm5lYAjCqHNAL8qGBU-eMyU+TuHTqM-UO7o1eTpLfUNDEnfGeZ4SKUWA6AgfCoAAM+FAoAAHewAegRNkSWFhMAEJmCCLRMARsOqsNMqARABJ6OEtBD2j9Tuc6jZYQgAkDYozmagBAArHLnGksX7-CDM3Kc0xwZAaIA).
+
+What is _convenient_ (or _weird_, depending on your preference) is that the type
+of `myPromise` in the following snippet is not `Promise<Promise<Response>>`, but
+just `Promise<Response>`.
+
+```typescript
+const responsePromise: Promise<Response> = getDelayedRandomInteger().then(
+  (id) => fetch(`https://swapi.dev/api/people/${id}`)
+);
+```
+
+`then` accepts functions that return both synchronous values **and** `Promise`s.
+If the function returns a `Promise`, the outer `Promise` will resolve with that
+returned `Promise` value. If it returns a synchronous value, that value will be
+used as the final value.
+
+It may seem a bit magical at first and seems convenient at first. It is not
+concerning as long as you are not actually interested in having access to the
+inner `Promise` from the outside. In other words, if you do not care about the
+final type actually being `Promise<Promise<...>>`, you can live a happy life
+appreciating the convenience of the overloaded `then` method. What if you need
+that inner promise?
+
+## Processes as promises in `zx`
+
+[zx](https://github.com/google/zx) is a great tool for writing scripts in
+JavaScript/TypeScript. I use it in favor of Bash scripts and appreciate how easy
+it is to read and refactor them.
+
+When using `zx`, the primary way to run other processes is to use the `$` tagged
+template literal. It returns a `Promise` that resolves with an object containing
+the output of the process.
+
+```typescript
+import { $ } from "zx";
+
+const echoProcess = $`echo "Hello world"`;
+echoProcess.then(({ exitCode }) => console.log("Finished with", exitCode));
+```
+
+```sh
+10:22 $ npx zx test.mjs
+$ echo "Hello world"
+Hello world
+Finished with 0
+```
+
+## Background tasks in zx
+
+In some cases, we want to start a process and run it in the background while our
+`zx` script runs some other tasks. This happened to me when I wanted to start
+[a `postgres` Docker container](https://hub.docker.com/_/postgres) and keep it
+running in the background while the script leverages it later. Starting a Docker
+container takes a moment (especially when the image has to be pulled for the
+first time), so the script should wait for the container to be running before it
+continues.
+
+The script could look like this (parts omitted for brevity):
+
+```typescript
+const containerName = "postgres";
+
+const waitForContainerToBeReady = () =>
+  $`docker inspect -f '{{.State.Status}}' ${containerName}`.then(({ stdout }) =>
+    stdout.trim() === "running" ? undefined : waitForContainerToBeReady()
+  );
+}
+
+const startPostgresContainer = () =>
+  $`docker create --name ${containerName} ...`.then(() => {
+    const postgresContainerProcess = $`docker start --attach ${containerName}`;
+
+    return waitForContainerToBeReady().then(() => postgresContainerProcess);
+  });
+
+const stopPostgresContainer = (postgresContainerProcess: ProcessPromise) =>
+  postgresContainerProcess.nothrow().kill();
+
+startPostgresContainer((postgresContainerProcess) => {
+  // Run some SQL queries and then stop the process
+  return $`docker exec ...`.then(() =>
+    stopPostgresContainer(postgresContainerProcess)
+  );
+});
+```
+
+The functions are neatly extracted so other scripts can use them easily and the
+code consists of higher-level blocks, which makes it easier to read.
+
+There is a bug in this code which is strictly related to the overloaded behavior
+of `then`.
+
+## Unnecessary waiting
+
+The bug is in the final `then` of the `startPostgresContainer` function.
+
+```typescript
+const startPostgresContainer = () =>
+  $`docker create --name ${containerName} ...`.then(() => {
+    const postgresContainerProcess = $`docker start --attach ${containerName}`;
+
+    return waitForContainerToBeReady().then(
+      () =>
+        // The bug is here 🐛
+        postgresContainerProcess
+    );
+  });
+```
+
+The intent is to return the entire `postgresContainerProcess` of type
+`ProcessPromise` (which is essentially `Promise<ProcessOutput>`) to the caller
+of `startPostgresContainer`. What happens instead is that `then` **waits for**
+the `postgresContainerProcess` to finish before resolving the outer promise
+returned from `startPostgresContainer`. This means we have a deadlock, because
+the `postgres` container will keep running in the background indefinitely and
+the `zx` script will wait for it to finish.
+
+This is strictly related to the fact that `then` will wait for the inner
+`Promise` to resolve if it gets a `Promise` from the callback. It does not
+support returning the inner Promise as the resolved `value` of the outer
+Promise.
+
+## Workarounds
+
+There are 2 workarounds I found to this problem:
+
+1. Separate creating processes from doing additional operations on them.
+
+   This means a function like `startPostgresContainer` cannot both start the
+   container and wait for it to be ready. It should only create the `Promise`
+   and pass it to the caller. Then, the caller always gets the full `Promise`
+   and can await it whenever they want. This means the calling code would have
+   to be refactored like so:
+
+   ```typescript
+   startPostgresContainer((postgresContainerProcess) =>
+     waitForContainerToBeReady()
+       .then(() => $`docker exec ...`)
+       .then(() => stopPostgresContainer(postgresContainerProcess))
+   );
+   ```
+
+2. Wrap the inner `Promise` in an object or array to prevent `then` waiting for
+   it.
+
+   This is explicitly avoiding the _convenience_ of `then` by wrapping the inner
+   `Promise` in some container (object/array), so `then` returns that container
+   as-is rather than waiting for it to resolve before continuing.
+
+   ```typescript
+   const startPostgresContainer = () =>
+     $`docker create --name ${containerName} ...`.then(() => {
+       const postgresContainerProcess = $`docker start --attach ${containerName}`;
+
+       return waitForContainerToBeReady().then(() =>
+         // Notice we return an array now
+         [postgresContainerProcess]
+       );
+     });
+
+   startPostgresContainer(
+     (
+       // We unwrap that array in the consuming code
+       [postgresContainerProcess]
+     ) =>
+       $`docker exec ...`.then(() =>
+         stopPostgresContainer(postgresContainerProcess)
+       )
+   );
+   ```
+
+   A more contrived example:
+
+   ```typescript
+   import { $ } from "zx";
+
+   const workflow = async () => {
+     const sleep = $`sh -c "sleep 10 && echo Awoken from sleep"`;
+
+     await $`echo "Hello world"`;
+     return [sleep];
+   };
+
+   const [sleep] = await workflow();
+   console.log("Killing sleeping process");
+   await sleep.nothrow().kill();
+   console.log("Done");
+   ```
+
+   Result:
+
+   ```sh
+   11:06 $ npx zx test.mjs
+   $ sh -c "sleep 10 && echo Awoken from sleep"
+   $ echo "Hello world"
+   Hello world
+   Killing sleeping process
+   Done
+   ```
+
+I like the second solution better. It keeps the `waitForContainerToBeReady`
+logic inside of `startPostgresContainer` while being only slightly less
+convenient for the caller thanks to array destructuring.
+
+## `async`/`await` is the same
+
+In case you were wondering, using `async`/`await` instead of chaining `.then`
+behaves the same way. If we rewrote `startPostgresContainer` to use async/await,
+the bug would still be there:
+
+```typescript
+const startPostgresContainer = async () =>
+  await $`docker create --name ${containerName} ...`
+    const postgresContainerProcess = $`docker start --attach ${containerName}`;
+
+    await waitForContainerToBeReady();
+    return postgresContainerProcess;
+  });
+```
+
+The `Promise` returned from `startPostgresContainer` would resolve when
+`postgresContainerProcess` resolves. This means, `startPostgresContainer` would
+resolve after the container process finishes.
+
+## Monadic chaining
+
+In functional programming terminology, I would characterize `Promise` as a
+slightly skewed monad. The overloaded `then` is the reason why it is _slightly
+skewed_.
+
+Monads have 2 separate methods to transform them:
+
+- `map(callback)` which makes the outer monad contain whatever value the inner
+  function returns. This is like `then` when the callback returns a regular
+  value.
+- `chain(callback)` (also known as `flatMap` or `bind`) which requires that the
+  `callback` returns a monad, and the outer monad becomes that inner monad. This
+  is like `then` when the callback returns another `Promise`.
+
+What is nice in having 2 separate methods is that the programmer gets to choose
+which one is needed at which point. Even if you decide to use the other one in
+the middle of the function, changing the name from one to the other is simple
+enough.
+
+`then` does not let you choose - the behavior is chosen for you based on the
+value you return. If you want the `map` functionality and want to return a
+`Promise`, you are required to do workarounds.
+
+If you are using [`fp-ts`](https://gcanti.github.io/fp-ts/), you are in luck.
+Its `Task` module contains separate
+[`chain`](https://gcanti.github.io/fp-ts/modules/Task.ts.html#chain-1) and
+[`map`](https://gcanti.github.io/fp-ts/modules/Task.ts.html#map) functions. If
+you are using regular `Promise`s, you are stuck doing workarounds.
+
+## Conclusion
+
+`Promise` `then` API was designed in a way that differs from the usual
+functional programming monad API. It offers more convenience in most cases, but
+makes more advanced cases require workarounds. I appreciate precision and I
+would love if the `Promise` API had 2 different methods for `chain` and `map`. I
+doubt the core API will change, though, so this thought will stay an unfulfilled
+dream.
