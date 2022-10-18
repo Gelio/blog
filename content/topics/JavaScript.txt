@@ -1,0 +1,4 @@
+JavaScript is the language that powers most of the interactivity on websites and web apps.
+It can also be used outside of browsers thanks to runtimes such as NodeJS or Deno.
+This is the language I work with most of the time, although most often I write
+and read its statically-typed superset: TypeScript.
