@@ -11,7 +11,9 @@
     "lint": "next lint",
     "check-types": "tsc --noEmit",
     "create-indexes": "esno ./content-processing/create-indexes.ts",
-    "copy-static-content": "rsync -avh --delete --exclude='**/*.mdx' content/articles/ public/static-content/"
+    "copy-static-content": "rsync -avh --delete --exclude='**/*.mdx' content/articles/ public/static-content/",
+    "fmt": "prettier --write --ignore-path .gitignore .",
+    "fmt.check": "prettier --check --ignore-path .gitignore ."
   },
   "dependencies": {
     "@emotion/react": "^11.9.0",
