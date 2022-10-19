@@ -1,0 +1,3 @@
+Node.js is a JavaScript runtime that allows running JavaScript
+outside of the browser. It is used to build application servers, CLI
+tools, and much more.

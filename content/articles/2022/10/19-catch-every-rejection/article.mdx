@@ -1,0 +1,310 @@
+---
+title: Catch rejections in every Promise chain
+date: 2022-10-19
+tags: JavaScript, Node.js
+slug: catch-rejections-in-every-promise-chain
+summary:
+  In Node.js, omitting catching a rejection in at least one Promise chain leads
+  to an `unhandledRejection` event and the process being usually killed.
+---
+
+Consider the following source code:
+
+```typescript
+const promise = Promise.reject(new Error("Rejected"));
+
+promise.finally(() => {
+  console.log("finally runs");
+});
+
+promise.then(
+  () => {
+    console.log("Promise resolved");
+  },
+  () => {
+    console.log("Error caught");
+  }
+);
+```
+
+If you run the following code in Node.js, the result will be the following (at
+least on versions v16.13.1, v16.18.0, and v19.0.0):
+
+```sh
+$ node test.js
+finally runs
+Error caught
+/home/voreny/projects/blog/test/test.js:1
+const promise = Promise.reject(new Error("Rejected"));
+                               ^
+
+Error: Rejected
+    at Object.<anonymous> (/home/voreny/projects/blog/test/test.js:1:32)
+    at Module._compile (node:internal/modules/cjs/loader:1159:14)
+    at Module._extensions..js (node:internal/modules/cjs/loader:1213:10)
+    at Module.load (node:internal/modules/cjs/loader:1037:32)
+    at Module._load (node:internal/modules/cjs/loader:878:12)
+    at Function.executeUserEntryPoint [as runMain] (node:internal/modules/run_main:82:12)
+    at node:internal/main/run_main_module:23:47
+```
+
+I was surprised by this behavior. I thought I caught the rejection by providing
+the second callback to `then` (the one that prints `Error caught`). Refactoring
+the second callback of `then` to a standalone `catch`
+(`promise.then(...).catch(...)`) does not help. What surprised me is that in
+this case, the process exits, which we can observe by adding a delayed
+`console.log`:
+
+```typescript
+const promise = Promise.reject(new Error("Rejected"));
+
+promise.finally(() => {
+  console.log("finally runs");
+});
+
+promise
+  .then(() => {
+    console.log("Promise resolved");
+  })
+  .catch(() => {
+    console.log("Error caught");
+  });
+
+setTimeout(() => {
+  console.log("Timeout");
+}, 500);
+```
+
+The output is still the same. No sign of `Timeout` being printed in the console.
+The process exits right away:
+
+```sh
+$ time node test.js
+finally runs
+Error caught
+/home/voreny/projects/blog/test/test.js:1
+const promise = Promise.reject(new Error("Rejected"));
+                               ^
+
+Error: Rejected
+    at Object.<anonymous> (/home/voreny/projects/blog/test/test.js:1:32)
+    at Module._compile (node:internal/modules/cjs/loader:1159:14)
+    at Module._extensions..js (node:internal/modules/cjs/loader:1213:10)
+    at Module.load (node:internal/modules/cjs/loader:1037:32)
+    at Module._load (node:internal/modules/cjs/loader:878:12)
+    at Function.executeUserEntryPoint [as runMain] (node:internal/modules/run_main:82:12)
+    at node:internal/main/run_main_module:23:47
+
+Node.js v19.0.0
+
+real    0m0,034s
+user    0m0,022s
+sys     0m0,013s
+```
+
+## Unhandled rejections
+
+What we just observed is how Node.js reacts to _unhandled Promise rejections_.
+When a Promise chain ends with a rejection that was not caught, Node.js emits
+[the `unhandledRejection` event](https://nodejs.org/docs/latest-v18.x/api/process.html#event-unhandledrejection).
+
+We can register a handler for that event:
+
+```typescript
+const promise = Promise.reject(new Error("Rejected"));
+
+process.on("unhandledRejection", (error) => {
+  console.log("Got unhandled rejection", error);
+});
+
+setTimeout(() => {
+  console.log("Timeout");
+}, 500);
+```
+
+Just as like
+[in physics](<https://en.wikipedia.org/wiki/Observer_effect_(physics)>), the
+observation alters the outcome. Just because we registered an event handler for
+these unhandled rejections, the process no longer exits and `Timeout` is printed
+in the console:
+
+```sh
+$ time node test.js
+Got unhandled rejection Error: Rejected
+    at Object.<anonymous> (/home/voreny/projects/blog/test/test.js:1:32)
+    at Module._compile (node:internal/modules/cjs/loader:1159:14)
+    at Module._extensions..js (node:internal/modules/cjs/loader:1213:10)
+    at Module.load (node:internal/modules/cjs/loader:1037:32)
+    at Module._load (node:internal/modules/cjs/loader:878:12)
+    at Function.executeUserEntryPoint [as runMain] (node:internal/modules/run_main:82:12)
+    at node:internal/main/run_main_module:23:47
+Timeout
+
+real    0m0,532s
+user    0m0,032s
+sys     0m0,004s
+```
+
+## Handling rejections in each Promise chain
+
+Coming back to the example from the beginning of the article, let's attach a
+handler for `unhandledRejection`s:
+
+```typescript
+const promise = Promise.reject(new Error("Rejected"));
+
+promise.finally(() => {
+  console.log("finally runs");
+});
+
+promise
+  .then(() => {
+    console.log("Promise resolved");
+  })
+  .catch(() => {
+    console.log("Error caught");
+  });
+
+process.on("unhandledRejection", (error) => {
+  console.log("Got unhandled rejection", error);
+});
+```
+
+```sh
+$ node test.js
+finally runs
+Error caught
+Got unhandled rejection Error: Rejected
+    at Object.<anonymous> (/home/voreny/projects/blog/test/test.js:1:32)
+    at Module._compile (node:internal/modules/cjs/loader:1159:14)
+    at Module._extensions..js (node:internal/modules/cjs/loader:1213:10)
+    at Module.load (node:internal/modules/cjs/loader:1037:32)
+    at Module._load (node:internal/modules/cjs/loader:878:12)
+    at Function.executeUserEntryPoint [as runMain] (node:internal/modules/run_main:82:12)
+    at node:internal/main/run_main_module:23:47
+```
+
+This shows exactly that despite having a `catch` in the second Promise chain,
+there is still an unhandled rejection in the first Promise chain (the one with a
+sole `finally`).
+
+Attaching a `catch` in the first Promise chain makes the unhandled rejection
+event go away:
+
+```typescript
+const promise = Promise.reject(new Error("Rejected"));
+
+promise
+  .finally(() => {
+    console.log("finally runs");
+  })
+  .catch(() => {
+    console.log("Error also caught in first chain");
+  });
+
+promise
+  .then(() => {
+    console.log("Promise resolved");
+  })
+  .catch(() => {
+    console.log("Error caught");
+  });
+
+process.on("unhandledRejection", (error) => {
+  console.log("Got unhandled rejection", error);
+});
+```
+
+```bash
+$ node test.js
+finally runs
+Error caught
+Error also caught in first chain
+```
+
+## Real-life example
+
+I encountered this behavior when trying to mix Promises and
+[Node.js Streams](https://nodejs.org/docs/latest-v18.x/api/stream.html). I
+wanted to use the asynchronous version of
+[`pipeline`](https://nodejs.org/docs/latest-v18.x/api/stream.html#streampipelinestreams-callback)
+and remove event listeners at the end of the pipeline, regardless of whether it
+was successful or not. The code looked like this:
+
+```typescript
+const pipelineWithoutDestroyingSource = (
+  sourceStream: Readable,
+  transforms: Transform[]
+) => {
+  const newSource = new Duplex();
+  sourceStream.pipe(newSource);
+  const pipelinePromise = pipeline(newSource, ...transforms);
+  pipelinePromise.finally(() => {
+    sourceStream.unpipe(newSource);
+  });
+
+  return pipelinePromise;
+};
+
+// in some other place
+try {
+  await pipelineWithoutDestroyingSource(/* ... */);
+} catch (error) {
+  console.log("Could not complete the pipeline", error);
+}
+```
+
+Note that this code is missing error handling and may not work. It is just to
+show the use of promises.
+
+This snippet creates a new Promise chain that does not have any rejection
+handlers. Even though the rejection is caught in the `try` block, this is just
+the rejection in one Promise chain. The other Promise chain inside of
+`pipelineWithoutDestroyingSource` is still there and will trigger
+`unhandledRejection` events. This will end up exiting the process.
+
+## Unhandled rejections in the browser
+
+Unhandled rejections behave the same way in the browser. If we take the code
+from the beginning of the article and run it in Chrome or Firefox (these are the
+browsers I checked), we get an error log about an _Uncaught (in promise) Error_.
+
+It is not as destructive as in Node.js and an unhandled rejection does not kill
+the browser tab. Registered timeouts and other asynchronous events continue to
+run:
+
+```typescript
+const promise = Promise.reject(new Error("Rejected"));
+
+promise.finally(() => {
+  console.log("finally runs");
+});
+
+promise
+  .then(() => {
+    console.log("Promise resolved");
+  })
+  .catch(() => {
+    console.log("Error caught");
+  });
+
+setTimeout(() => {
+  console.log("Timeout");
+}, 500);
+```
+
+![Firefox console with the result of execution of the snippet above. There is an unhandled rejection and then there is a log line from the timeout.](/static-content/2022/10/19-catch-every-rejection/firefox-rejection-timeout.png)
+
+## Summary
+
+The requirement to handle rejections in every Promise chain seems to hold up in
+the browser and Node.js. The former leaves extra information in the console but
+seems otherwise harmless. The latter leads to the process being killed
+unexpectedly, unless a handler for `unhandledRejection` events is registered.
+
+Catching the rejection once, in one Promise chain, does not mean that the
+rejection is handled in other chains. The rejection must be handled in each
+Promise chain (`.then`, `.finally`) to consdier it handled.
+
+The safe thing to do is to always `.catch` errors before a `.finally` when the
+intention is to do some cleanup regardless of the process resolution.
