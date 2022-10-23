@@ -27,11 +27,6 @@ const nextConfig = {
       source: "/tr/mat.js",
       destination: `${matomoOrigin}/matomo.js`,
     },
-    {
-      // Proxy Matomo requests in an attempt to work around ad blockers
-      source: "/tr/mat",
-      destination: `${matomoOrigin}/matomo.php`,
-    },
   ],
 };
 
