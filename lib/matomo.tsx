@@ -29,6 +29,13 @@ const obfuscateMatomoSearchParams = (searchParams: string): string => {
   );
 };
 
+const siteId = process.env.NEXT_PUBLIC_MATOMO_SITE_ID;
+if (!siteId) {
+  throw new Error(
+    "Site ID not specified. Please provide a valid Matomo site ID in NEXT_PUBLIC_MATOMO_SITE_ID environment variable"
+  );
+}
+
 const initializeMatomo = () => {
   const _paq = (window._paq = window._paq || []);
 
@@ -41,7 +48,7 @@ const initializeMatomo = () => {
   _paq.push(["trackPageView"]);
   _paq.push(["enableLinkTracking"]);
   _paq.push(["setTrackerUrl", trackerPathname]);
-  _paq.push(["setSiteId", "1"]);
+  _paq.push(["setSiteId", siteId]);
 };
 
 const useMatomo = () => {
