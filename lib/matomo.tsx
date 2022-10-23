@@ -17,6 +17,11 @@ const trackerUrl = "/tr/mat";
 const initializeMatomo = () => {
   const _paq = (window._paq = window._paq || []);
 
+  // NOTE: disable cookies to avoid having to ask for consent before setting
+  // cookies.
+  // We trade some data accuracy for a friendlier UX.
+  // @see https://matomo.org/faq/new-to-piwik/how-do-i-use-matomo-analytics-without-consent-or-cookie-banner/
+  _paq.push(["disableCookies"]);
   _paq.push(["trackPageView"]);
   _paq.push(["enableLinkTracking"]);
   _paq.push(["setTrackerUrl", trackerUrl]);
