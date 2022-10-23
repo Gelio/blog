@@ -29,7 +29,6 @@ import {
   ErrorAlertContainer,
 } from "../../components/ErrorAlert";
 import { IndexedArticleMetadata } from "../../content-processing/indexes/schema";
-import { contentIncludeFileGlobs } from "../../content-processing/app-utils";
 import { HeadDocumentTitle, HeadMetaDescription } from "../../seo";
 import stripMarkdown from "strip-markdown";
 import { remark } from "remark";
@@ -276,5 +275,23 @@ const stripMarkdownFromString =
     );
 
 export const config: PageConfig = {
-  unstable_includeFiles: contentIncludeFileGlobs,
+  /**
+   * Globs pointing to files that are necessary during Incremental Static
+   * Generation of content resources.
+   *
+   * Globs are reletive to the root of the repository.
+   *
+   * They are needed because otherwise Next will exclude these files from the runtime environment of ISG.
+   *
+   * @see https://nextjs.org/docs/advanced-features/output-file-tracing#caveats
+   */
+  unstable_includeFiles: [
+    // NOTE: the `*.*` is mandatory so that minimatch returns only files (with an
+    // extension) and not directories. Otherwise, Next logs an EISDIR when
+    // processing matches.
+    "content-indexes/**/*.*",
+    "content/**/*.*",
+    // NOTE: static content is inspected by rehype-img-size to determine image dimensions
+    "public/static-content/**/*.*",
+  ],
 };
