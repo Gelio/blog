@@ -309,6 +309,9 @@ The `Promise` returned from `startPostgresContainer` would resolve when
 `postgresContainerProcess` resolves. This means, `startPostgresContainer` would
 resolve after the container process finishes.
 
+[_Awaiting problems in JavaScript_](/article/awaiting-problems-in-javascript)
+goes over this in more detail.
+
 ## Monadic chaining
 
 In functional programming terminology, I would characterize `Promise` as a
@@ -347,3 +350,5 @@ makes more advanced cases require workarounds. I appreciate precision and I
 would love if the `Promise` API had 2 different methods for `chain` and `map`. I
 doubt the core API will change, though, so this thought will stay an unfulfilled
 dream.
+
+[Read more how this behavior translates to `async`/`await` and what problems lie there](/articles/awaiting-problems-in-javascript).

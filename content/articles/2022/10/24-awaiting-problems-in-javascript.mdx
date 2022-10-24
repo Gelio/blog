@@ -1,0 +1,229 @@
+---
+title: Awaiting problems in JavaScript
+date: 2022-10-24
+tags: JavaScript
+slug: awaiting-problems-in-javascript
+summary:
+  Does `await` solve [the problems of
+  `Promise.prototype.then`](/article/javascript-promised-convenience)? Not
+  really.
+---
+
+As discussed in
+[_JavaScript's promised convenience_](/article/javascript-promised-convenience),
+`Promise.prototype.then` combines the functionality of monadic `chain` and `map`
+operations. The callback can return either a regular value or a `Promise` and
+`.then` will await the `Promise` resolution in the chain. This blocks the
+possibility of actually returning a `Promise` from `then`.
+[Some HackerNews comment](https://news.ycombinator.com/item?id=33313147)
+suggested using `async`/`await` instead. Let's explore if it can be used as a
+workaround. In this article I explore some perplexing behavior of `async`
+functions regarding returning `Promise`s and `await`ing non-`Promise`s.
+
+## Awaiting... promises
+
+`await` let's us write code that looks like it is synchronous but is
+asynchronous under the hood.
+
+```typescript
+function thenWorkflow() {
+  return fetch(url)
+    .then((response) => response.json())
+    .then((data) => {
+      console.log(data);
+    });
+}
+
+async function asyncWorkflow() {
+  const response = await fetch(url);
+  const data = await response.json();
+  console.log(data);
+}
+```
+
+These 2 functions are equivalent. The `Promise`s they return (did I say that
+`async` functions automatically return a `Promise`, you just don't see it?) will
+resolve with `undefined`, and will reject with an error from either `fetch` or
+`response.json()`, should there be any.
+
+Returning the `data` is easy enough.
+
+```diff
+ async function asyncWorkflow() {
+   const response = await fetch(url);
+   const data = await response.json();
+-  console.log(data);
++  return data;
+ }
+```
+
+There, the `Promise` returned from `asyncWorkflow` will resolve with `data`
+instead of logging it to the console. `data` is a regular value, not a
+`Promise`, so this operation does not require any implicit logic. Plain and
+simple.
+
+### Returning Promises from async functions
+
+We could refactor the code to avoid having an intermediate `data` variable that
+is returned immediately after being defined.
+
+```diff
+ async function asyncWorkflow() {
+   const response = await fetch(url);
+-  const data = await response.json();
++  return await response.json();
+ }
+```
+
+Another _convenience_ of `async` functions, this time, is that the returned
+`Promise` will be automatically awaited. Thus, we can remove the unnecessary
+`await` keyword.
+
+```diff
+ async function asyncWorkflow() {
+   const response = await fetch(url);
+-  return await response.json();
++  return response.json();
+ }
+```
+
+The code still works the same way. Magic!
+
+But wait, isn't it the same behavior as the lack of preciseness we found in
+`Promise.prototype.then`? Looks like it is. The behavior of `async` function's
+`return` differs depending on whether you return a `Promise` or a regular value.
+Returning a `Promise` awaits it, returning a regular value is a plain return.
+This is the same behavior as in `Promise.prototype.then`. This makes it
+impossible to return a `Promise` from an `async` function and get that `Promise`
+object.
+
+In TypeScript's terms, the return type of an `async` function will never be
+`Promise<Promise<unknown>>`. In fact, I'm pretty sure such a value will never
+exist in JavaScript. Even `Promise.resolve(Promise.resolve(1))` is just a
+`Promise<number>`, not `Promise<Promise<number>>`.
+
+## Awaiting... errors
+
+Let's add some very basic error handling to our `asyncWorkflow`.
+
+```diff
+ async function asyncWorkflow() {
++  try {
+     const response = await fetch(url);
+     return response.json();
++  } catch (error) {
++    console.log("Network or deserialization error", error);
++  }
+ }
+```
+
+We said that `return await` worked the same way as `return` before we added
+error handling. Does it work the same now?
+
+```diff
+ async function asyncWorkflow() {
+   try {
+     const response = await fetch(url);
+-    return response.json();
++    return await response.json();
+   } catch (error) {
+     console.log("Network or serialization error", error);
+   }
+ }
+```
+
+It works differently! Not `await`ing `response.json()` will make it so that the
+`try` clause won't catch deserialization errors. The only errors that will be
+caught will be the ones from `fetch`. When we `await response.json()` and return
+the result, errors from both operations can be caught.
+
+This suggests that the `Promise` returned from an `async` function is somehow
+awaited _outside_ of the function. It is not returned verbatim from the
+function, because additional properties attached onto the returned `Promise` are
+not preserved:
+
+```typescript
+async function getAnnotatedPromise() {
+  const promise = Promise.resolve("hello");
+  promise.myValue = 123;
+  return promise;
+}
+
+(async () => {
+  const annotatedPromise = getAnnotatedPromise();
+  console.log(annotatedPromise.myValue); // undefined
+  console.log(await annotatedPromise); // hello
+})();
+```
+
+[TypeScript Playground link](https://www.typescriptlang.org/play?#code/IYZwngdgxgBAZgV2gFwJYHsIwOYFNkCCEE6ywyuAJgAoBO6AtqiLgBQCUMA3gFAwxRMIZDAAO9JixgBeGHUbNcAOlq4Q6ADYA3NgCIAFrg0b0u9gG4+YiYqUMwANWAaEuGTACMAJgDMl-qrICLRY4goslgC+PDysoJCwHDIAfNxWghDCMMDEpORU8pJusniEuWQUNDYsHP4CQprKJtisAOT2Ti64rQA02eX5VeHKHc6uFukNGk3oLa3AAO7AqJUwWmPdfYvLIjkkFQXVuBOR7LVAA)
+
+## Awaiting... anything
+
+Another interesting property of the `await` keyword is that it can be used with
+anything. It is not limited to `Promise`s and `Promise`-like objects. You can
+`await` numbers, strings, objects, arrays, functions, errors, even `null` and
+`undefined`.
+
+```typescript
+console.log([
+  await Promise.resolve(1),
+  await 2,
+  await "three",
+  await (() => 4),
+  await [5],
+  await { num: 6 },
+  await null,
+  await undefined,
+]);
+```
+
+[TypeScript playground link](https://www.typescriptlang.org/play?ssl=11&ssc=6&pln=2&pc=1#code/BQQwzgngdgxgBMAlHAvAPjgbwFBzjAeyjAIBsBTAOlIIHNgBtXPOEAdxAEsAXOABQBOBALacwVAeRKkAbuWABGRABpmedl14AmVS1YcecAETcAFpPJHdLDYeBJUGACwq1+zXAYBWALrX1BryYcFAArsIAXHAAbHAAvv7uhmGkpIm2vKFQACbkAGacUOTZ1j6IANzYcYhI5UA)
+
+JavaScript will not complain. It will actually `await` `Promise`s, and will
+return all the other values unmodified.
+
+## Awaiting... problems
+
+This is an example of JavaScript being friendly to impreciseness. Instead of
+enforcing strict requirements, it errs on the side of defensive programming.
+Instead of forcing application code to handle ambiguity if it is required, the
+handling of ambiguity is ingrained in the language.
+
+If the rules of `async`/`await` were changed to avoid any implicit
+awaiting/coercions, the problems mentioned in this article would go away.
+
+## A better future awaits (in an alternate universe)
+
+If `async` functions were to be added to the language again, I would be an
+advocate of designing them the following way:
+
+> The return value of an `async` function call is whatever was `return`ed inside
+> the function body, just wrapped in a `Promise` (because the function is async,
+> after all). `await`ing anything that is not `Promise`-like throws an error.
+
+A function like
+
+```typescript
+async function workflow(): Promise<Promise<number>> {
+  return Promise.resolve(1);
+}
+```
+
+would return `Promise<Promise<number>>`. If the value should be flattened, add
+`await` before returning.
+
+```typescript
+async function workflow(): Promise<number> {
+  return await Promise.resolve(1);
+}
+```
+
+This would automatically solve the problem of `try` not catching `Promise`s
+returned from an `async` function.
+
+Since awaiting non-`Promise`s leads to errors, preciseness is enforced and makes
+handling different types of values more explicit.
+
+I am not a language designer and I am not a part of the TC39 group. I am sharing
+my thoughts on `Promise`s and `async`/`await`. Hindsight is 20/20.
