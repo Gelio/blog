@@ -1,8 +1,8 @@
 import { either, taskEither } from "fp-ts";
 import { pipe } from "fp-ts/function";
-import { GetStaticPaths, GetStaticProps } from "next";
-import { ParsedUrlQuery } from "querystring";
-import { ComponentProps } from "react";
+import type { GetStaticPaths, GetStaticProps } from "next";
+import type { ParsedUrlQuery } from "querystring";
+import type { ComponentProps } from "react";
 import { serializeSummaryInIndexedArticles } from "../../components/ArticleCard";
 import { TopicPage } from "../../components/TopicPage";
 import { reserializeIfError } from "../../content-processing/app-utils";

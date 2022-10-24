@@ -1,6 +1,6 @@
 import styled from "@emotion/styled";
 import Link from "next/link";
-import { ComponentProps, ElementType, ReactNode } from "react";
+import type { ComponentProps, ElementType, ReactNode } from "react";
 
 import { rem, spacing } from "../../styles/theme";
 import { articleTitleStyle } from "../../styles/typography";

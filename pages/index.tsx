@@ -1,7 +1,7 @@
 import { either, taskEither } from "fp-ts";
 import { pipe } from "fp-ts/function";
-import { GetStaticProps } from "next";
-import { ComponentProps } from "react";
+import type { GetStaticProps } from "next";
+import type { ComponentProps } from "react";
 import { serializeSummaryInIndexedArticles } from "../components/ArticleCard";
 import { HomePage } from "../components/HomePage";
 import { readAllArticlesIndex } from "../content-processing/indexes";

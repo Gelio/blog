@@ -2,7 +2,7 @@ import styled from "@emotion/styled";
 import { either } from "fp-ts";
 import { pipe } from "fp-ts/function";
 import Link from "next/link";
-import { readTopicsSummaryIndex } from "../../content-processing/indexes/per-topic";
+import type { readTopicsSummaryIndex } from "../../content-processing/indexes/per-topic";
 import {
   pageContentMarginTop,
   responsiveContainer,
@@ -84,4 +84,5 @@ const TopicsContainer = styled("main")(
 
 const TopicLink = styled("a")(decorationOnHoverLinkStyle, ({ theme }) => ({
   color: theme.color.primary.main,
+  fontSize: rem(18),
 }));

@@ -18,7 +18,7 @@ export const blogTheme = {
       border: "rgba(43, 33, 24, 0.3)",
     },
   },
-};
+} as const;
 
 type BlogTheme = typeof blogTheme;
 

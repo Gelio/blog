@@ -1,5 +1,5 @@
-import { GetStaticProps } from "next";
-import { ComponentProps } from "react";
+import type { GetStaticProps } from "next";
+import type { ComponentProps } from "react";
 import { TopicsPage } from "../components/TopicsPage";
 import { reserializeIfError } from "../content-processing/app-utils";
 

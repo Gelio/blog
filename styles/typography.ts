@@ -8,7 +8,7 @@ export const articleTitleStyle = css({
 });
 
 export const headingStyle = css({
-  fontSize: rem(20),
+  fontSize: rem(28),
   fontWeight: "normal",
 });
 

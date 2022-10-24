@@ -4,8 +4,9 @@ import { task } from "fp-ts";
 import { pipe } from "fp-ts/function";
 import { MDXRemote, MDXRemoteSerializeResult } from "next-mdx-remote";
 import { serialize } from "next-mdx-remote/serialize";
-import { IndexedArticleMetadata } from "../../content-processing/indexes/schema";
-import { StyledArticleParagraph } from "../ArticlePage/styled-components";
+import type { IndexedArticleMetadata } from "../../content-processing/indexes/schema";
+import { baseMDXComponents } from "../mdx";
+import { Paragraph } from "../text";
 import { ArticleCard } from "./ArticleCard";
 
 export type IndexedArticleMetadataWithSerializedSummary = Omit<
@@ -29,6 +30,7 @@ export const IndexedArticleCard = ({ metadata }: IndexedArticleCardProps) => (
     summary={
       <MDXProvider
         components={{
+          ...baseMDXComponents,
           p: StyledArticleCardSummary,
         }}
       >
@@ -38,7 +40,7 @@ export const IndexedArticleCard = ({ metadata }: IndexedArticleCardProps) => (
   />
 );
 
-const StyledArticleCardSummary = styled(StyledArticleParagraph)({
+const StyledArticleCardSummary = styled(Paragraph)({
   margin: 0,
 });
 

@@ -7,12 +7,10 @@ import {
 } from "../../styles/layout";
 import { containerWidth, rem, spacing } from "../../styles/theme";
 import { headingStyle } from "../../styles/typography";
-import {
-  StyledArticleParagraph,
-  StyledArticleParagraphLink,
-} from "../ArticlePage/styled-components";
 import { Layout } from "../Layout";
 import { HeadDocumentTitle, HeadMetaDescription } from "../../seo";
+import { Paragraph, ParagraphLink } from "../text";
+import meImage from "../../public/images/me.jpg";
 
 export const AboutPage = () => {
   return (
@@ -30,20 +28,21 @@ export const AboutPage = () => {
             My name is Grzegorz Rozdzialik (pronounced “Rossgialik”), but I go
             by <StyledAccent>Greg</StyledAccent>. I am a Senior Software
             Engineer working at{" "}
-            <StyledArticleParagraphLink href="https://www.splitgraph.com/">
+            <ParagraphLink href="https://www.splitgraph.com/">
               Splitgraph
-            </StyledArticleParagraphLink>
+            </ParagraphLink>
             .
           </StyledAboutParagraph>
         </StyledAlwaysLeftColumn>
 
         <StyledHeroImageContainer>
           <StyledHeroImage
-            src="/images/me.jpg"
+            src={meImage}
             alt="A picture of me in Vienna"
             width={4000}
             height={2250}
             layout="responsive"
+            placeholder="blur"
           />
         </StyledHeroImageContainer>
 
@@ -60,9 +59,9 @@ export const AboutPage = () => {
 
           <StyledAboutParagraph>
             You can find more of my work on{" "}
-            <StyledArticleParagraphLink href="https://github.com/Gelio">
+            <ParagraphLink href="https://github.com/Gelio">
               my GitHub profile
-            </StyledArticleParagraphLink>
+            </ParagraphLink>
             .
           </StyledAboutParagraph>
         </StyledAlwaysLeftColumn>
@@ -102,7 +101,7 @@ const StyledAccent = styled("span")(({ theme }) => ({
   color: theme.color.primary.main,
 }));
 
-const StyledAboutParagraph = styled(StyledArticleParagraph)({
+const StyledAboutParagraph = styled(Paragraph)({
   marginBlockEnd: rem(spacing(1)),
 });
 
