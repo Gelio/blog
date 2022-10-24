@@ -1,8 +1,11 @@
 import { taskEither } from "fp-ts";
 import { flow, pipe } from "fp-ts/function";
 import { z } from "zod";
-import { ExtractLeftFromEither, ExtractResultFromTask } from "../../lib/fp-ts";
-import { ParsedArticleWithMetadata } from "../parse-articles";
+import type {
+  ExtractLeftFromEither,
+  ExtractResultFromTask,
+} from "../../lib/fp-ts";
+import type { ParsedArticleWithMetadata } from "../parse-articles";
 import { safeParseSchema } from "../utils";
 import { indexedArticleMetadataSchema } from "./schema";
 import {

@@ -1,7 +1,7 @@
 import { either, taskEither } from "fp-ts";
 import { flow, pipe } from "fp-ts/function";
 import { z } from "zod";
-import { ParsedArticleWithMetadata } from "../parse-articles";
+import type { ParsedArticleWithMetadata } from "../parse-articles";
 import { safeParseSchema } from "../utils";
 import { indexedArticleMetadataSchema } from "./schema";
 import {

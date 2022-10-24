@@ -21,6 +21,7 @@ import {
 } from "../ErrorAlert";
 import { HeadDocumentTitle, HeadMetaDescription } from "../../seo";
 import { Layout } from "../Layout";
+import { Paragraph } from "../text";
 
 interface TopicPageProps {
   topicName: string;
@@ -41,7 +42,7 @@ export const TopicPage = ({ topicName, articlesResult }: TopicPageProps) => {
       <StyledMainContent>
         <StyledPageTitle>Articles about {topicName}</StyledPageTitle>
 
-        <StyledTopicDescription>
+        <Paragraph>
           {pipe(
             articlesResult,
             either.match(
@@ -50,7 +51,7 @@ export const TopicPage = ({ topicName, articlesResult }: TopicPageProps) => {
               ({ description }) => description
             )
           )}
-        </StyledTopicDescription>
+        </Paragraph>
       </StyledMainContent>
 
       {pipe(
@@ -105,12 +106,8 @@ const StyledMainContent = styled("main")(
 );
 
 const StyledPageTitle = styled("h1")(headingStyle, {
-  marginBlock: 0,
-});
-
-const StyledTopicDescription = styled("p")({
-  marginBlockStart: rem(spacing(1)),
-  marginBlockEnd: rem(spacing(2)),
+  marginBlockStart: spacing(3),
+  marginBlockEnd: spacing(2),
 });
 
 const StyledArticleCardsContainer = styled("div")(

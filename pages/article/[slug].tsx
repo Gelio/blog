@@ -2,16 +2,12 @@ import { either, taskEither } from "fp-ts";
 import { serialize } from "next-mdx-remote/serialize";
 import { MDXProvider } from "@mdx-js/react";
 import { pipe } from "fp-ts/function";
-import { GetStaticPaths, GetStaticProps, PageConfig } from "next";
-import Link from "next/link";
-import { ParsedUrlQuery } from "querystring";
+import type { GetStaticPaths, GetStaticProps, PageConfig } from "next";
+import type { ParsedUrlQuery } from "querystring";
 import {
   ArticleHeader,
   StyledArticleContainer,
-  StyledArticleParagraph,
-  StyledArticleParagraphLink,
   StyledArticleSection,
-  StyledArticleSectionHeading,
 } from "../../components/ArticlePage";
 import { Layout } from "../../components/Layout";
 import {
@@ -28,7 +24,7 @@ import {
   ErrorAlert,
   ErrorAlertContainer,
 } from "../../components/ErrorAlert";
-import { IndexedArticleMetadata } from "../../content-processing/indexes/schema";
+import type { IndexedArticleMetadata } from "../../content-processing/indexes/schema";
 import { HeadDocumentTitle, HeadMetaDescription } from "../../seo";
 import stripMarkdown from "strip-markdown";
 import { remark } from "remark";
@@ -36,7 +32,7 @@ import rehypeHighlight from "rehype-highlight";
 import rehypeImageSize from "rehype-img-size";
 import "highlight.js/styles/base16/gruvbox-dark-medium.css";
 import { WithWrappedCodeBlock } from "../../components/WithWrappedCodeBlock";
-import Image from "next/image";
+import { baseMDXComponents } from "../../components/mdx";
 
 interface SourceWithMetadata {
   mdxSource: MDXRemoteSerializeResult;
@@ -90,31 +86,8 @@ const ArticlePage = ({ sourceWithMetadataResult }: ArticlePageProps) => {
                 <StyledArticleSection>
                   <MDXProvider
                     components={{
-                      a: (props) =>
-                        props.href ? (
-                          <Link href={props.href} passHref>
-                            <StyledArticleParagraphLink {...props} />
-                          </Link>
-                        ) : (
-                          (() => {
-                            throw new Error("Link does not have a href");
-                          })()
-                        ),
-                      p: StyledArticleParagraph,
-                      h2: StyledArticleSectionHeading,
+                      ...baseMDXComponents,
                       WithWrappedCodeBlock,
-                      img: (props) => (
-                        <Image
-                          // NOTE: required to fix a TS error
-                          src={props.src as string}
-                          // NOTE: required to tell ESLint we do pass `alt`
-                          alt={props.alt}
-                          {...props}
-                          // NOTE: required to fix a TS error
-                          placeholder={undefined}
-                          layout="responsive"
-                        />
-                      ),
                     }}
                   >
                     <MDXRemote {...mdxSource} />

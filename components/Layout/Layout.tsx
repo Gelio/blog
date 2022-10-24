@@ -1,5 +1,6 @@
 import styled from "@emotion/styled";
 import type { PropsWithChildren } from "react";
+import { rem, spacing } from "../../styles/theme";
 import { Footer } from "./Footer";
 import { Header } from "./Header";
 
@@ -21,4 +22,5 @@ const LayoutContainer = styled("div")({
 // shorter than 100vh
 const MainContainer = styled("main")({
   flexGrow: 1,
+  marginBlockEnd: rem(spacing(20)),
 });

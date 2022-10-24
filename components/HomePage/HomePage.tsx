@@ -1,7 +1,7 @@
 import styled from "@emotion/styled";
 import { either } from "fp-ts";
 import { pipe } from "fp-ts/function";
-import { ReadAllArticlesIndexError } from "../../content-processing/indexes";
+import type { ReadAllArticlesIndexError } from "../../content-processing/indexes";
 import { HeadDocumentTitle, HeadMetaDescription } from "../../seo";
 
 import {
@@ -20,6 +20,7 @@ import {
   ErrorAlertContainer,
 } from "../ErrorAlert";
 import { Layout } from "../Layout";
+import { Paragraph } from "../text";
 
 interface HomePageProps {
   allArticlesResult: either.Either<
@@ -37,7 +38,7 @@ export const HomePage = ({ allArticlesResult }: HomePageProps) => {
       </HeadMetaDescription>
 
       <StyledMainContent>
-        Hey, I&apos;m Greg, welcome to my blog!
+        <Paragraph>Hey, I&apos;m Greg, welcome to my blog!</Paragraph>
       </StyledMainContent>
 
       {pipe(
