@@ -54,8 +54,8 @@ export const Pre: MDXComponents["pre"] = (props) => {
 };
 
 export const StyledInlineCode = styled("code")(({ theme }) => ({
-  backgroundColor: theme.color.text.main,
-  color: theme.color.primary.light,
+  backgroundColor: theme.color.text.onDarkBackground,
+  border: `solid 1px ${theme.color.background.light}`,
   borderRadius: spacing(1),
   paddingBlock: spacing(0.25),
   paddingInline: spacing(0.5),
