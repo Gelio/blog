@@ -49,13 +49,13 @@ export interface FileWriteError {
   error: unknown;
 }
 
-export const safeWriteIndex = (
+export const safeWriteFile = (
   filePath: string,
-  data: unknown
+  data: string
 ): taskEither.TaskEither<FileWriteError, void> =>
   taskEither.tryCatch(
     () =>
-      fs.writeFile(filePath, JSON.stringify(data, null, 2), {
+      fs.writeFile(filePath, data, {
         encoding: "utf-8",
       }),
     (error) => ({
@@ -63,6 +63,9 @@ export const safeWriteIndex = (
       error,
     })
   );
+
+export const safeWriteIndex = (filePath: string, data: unknown) =>
+  safeWriteFile(filePath, JSON.stringify(data, null, 2));
 
 export interface FileReadError {
   type: "file-read-error";
