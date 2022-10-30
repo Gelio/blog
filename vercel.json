@@ -1,4 +1,5 @@
 {
+  "buildCommand": "yum install rsync.x86_64 -y && npm run build",
   "headers": [
     {
       "source": "/rss.xml",
