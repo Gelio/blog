@@ -36,7 +36,17 @@ if (!siteId) {
   );
 }
 
+let matomoInitialized = false;
 const initializeMatomo = () => {
+  // NOTE: initialize Matomo only once.
+  // React 18 runs `useEffect` twice in development, which causes Matomo
+  // to be registered multiple times and log errors in the console.
+  // This small workaround gets rid of the errors by preventing double
+  // initialization.
+  if (matomoInitialized) {
+    return;
+  }
+
   const _paq = (window._paq = window._paq || []);
 
   // NOTE: disable cookies to avoid having to ask for consent before setting
@@ -49,6 +59,7 @@ const initializeMatomo = () => {
   _paq.push(["enableLinkTracking"]);
   _paq.push(["setTrackerUrl", trackerPathname]);
   _paq.push(["setSiteId", siteId]);
+  matomoInitialized = true;
 };
 
 const useMatomo = () => {
