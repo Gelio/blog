@@ -20,7 +20,7 @@ export const Tags = ({ names }: TagsProps) => (
 
 const Tag = ({ name }: { name: string }) => (
   <Link href={getTopicPagePath(name)} passHref>
-    <StyledTagLink>{name}</StyledTagLink>
+    <StyledTagLink aria-label={`Topic: ${name}`}>{name}</StyledTagLink>
   </Link>
 );
 
