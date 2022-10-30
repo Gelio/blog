@@ -1,4 +1,4 @@
-import { either } from "fp-ts";
+import { either, ioOption, option } from "fp-ts";
 import { pipe } from "fp-ts/function";
 import type { z, ZodTypeDef } from "zod";
 
@@ -15,3 +15,14 @@ export const safeParseSchema =
     pipe(schema.safeParse(data), (result) =>
       result.success ? either.right(result.data) : either.left(result.error)
     );
+
+const getVercelSiteURL: ioOption.IOOption<URL> = () =>
+  pipe(
+    option.fromNullable(process.env.VERCEL_URL),
+    option.map((host) => new URL(`https://${host}/`))
+  );
+
+export const getSiteURL = pipe(
+  getVercelSiteURL,
+  ioOption.getOrElse(() => () => new URL(`http://localhost:3000/`))
+);

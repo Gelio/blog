@@ -36,3 +36,5 @@ yarn-error.log*
 
 /content-indexes/
 /public/static-content/
+# The RSS feed is generated dynamically
+/public/rss.xml

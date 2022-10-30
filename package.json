@@ -5,12 +5,13 @@
   "scripts": {
     "dev": "next dev",
     "dev:content": "concurrently -n next,content \"next-remote-watch content\" \"chokidar 'content/**' -c 'npm run create-indexes && npm run copy-static-content'\"",
-    "build": "npm run create-indexes && npm run copy-static-content && npm run build:next",
+    "build": "npm run create-indexes && npm run copy-static-content && npm run create-rss-feed && npm run build:next",
     "build:next": "next build",
     "start": "next start",
     "lint": "next lint",
     "check-types": "tsc --noEmit",
     "create-indexes": "esno ./content-processing/create-indexes.ts",
+    "create-rss-feed": "esno ./content-processing/create-rss-feed.ts",
     "copy-static-content": "rsync -avh --delete --exclude='**/*.mdx' content/articles/ public/static-content/",
     "fmt": "prettier --write --ignore-path .gitignore .",
     "fmt.check": "prettier --check --ignore-path .gitignore ."
