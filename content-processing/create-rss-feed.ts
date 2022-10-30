@@ -40,7 +40,7 @@ const createRSSFeed = pipe(
     });
 
     return `<?xml version="1.0" encoding="UTF-8"?>
-<rss version="2.0">
+<rss version="2.0" xmlns:atom="http://www.w3.org/2005/Atom">
 ${rssChannel}
 </rss>`;
   }),
@@ -84,6 +84,7 @@ const getRSSChannel = ({
 <description>Articles about stuff I find interesting. Mostly frontend and tech-related.</description>
 <language>en-us</language>
 <docs>https://validator.w3.org/feed/docs/rss2.html</docs>
+<atom:link href="${url}rss.xml" rel="self" type="application/rss+xml" />
 ${pipe(
   maybeLatestArticleDate,
   option.match(
