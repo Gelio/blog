@@ -31,9 +31,22 @@ export const Header = () => {
         </Sublinks>
       </HeaderLinks>
 
-      <StyledGitHubLink href={githubProfileLink}>
-        <GitHubIcon />
-      </StyledGitHubLink>
+      <Sublinks>
+        <StyledIconLink
+          href="/rss.xml"
+          target="_blank"
+          rel="noopener"
+        >
+          <RSSIcon />
+        </StyledIconLink>
+        <StyledIconLink
+          href={githubProfileLink}
+          target="_blank"
+          rel="noopener"
+        >
+          <GitHubIcon />
+        </StyledIconLink>
+      </Sublinks>
     </StyledHeader>
   );
 };
@@ -86,7 +99,7 @@ const GitHubIcon = () => {
   );
 };
 
-const StyledGitHubLink = styled("a")(({ theme }) => ({
+const StyledIconLink = styled("a")(({ theme }) => ({
   textDecoration: "none",
   transition: "filter ease-in-out 200ms",
   "--shadowRadius": "1px",
@@ -95,3 +108,16 @@ const StyledGitHubLink = styled("a")(({ theme }) => ({
     "--shadowRadius": "2px",
   },
 }));
+
+const RSSIcon = () => {
+  const size = spacing(3);
+
+  return (
+    <Image
+      alt="RSS feed icon"
+      src="/images/rss.svg"
+      width={size}
+      height={size}
+    />
+  );
+};
