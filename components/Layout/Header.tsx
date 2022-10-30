@@ -81,6 +81,7 @@ const HeaderLinks = styled("nav")({
   display: "flex",
   alignItems: "baseline",
   gap: rem(spacing(3)),
+  flexWrap: "wrap",
 });
 
 const Sublinks = styled("div")({
@@ -97,6 +98,7 @@ const GitHubIcon = () => {
       src="/images/github.svg"
       width={size}
       height={size}
+      layout="fixed"
     />
   );
 };
@@ -120,6 +122,7 @@ const RSSIcon = () => {
       src="/images/rss.svg"
       width={size}
       height={size}
+      layout="fixed"
     />
   );
 };
