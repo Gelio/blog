@@ -38,7 +38,7 @@ export const ArticleCard = ({
     <div>{summary}</div>
 
     <Link href={getArticlePagePath(slug)} passHref>
-      <Button>Read more</Button>
+      <Button aria-label={`Read the article "${title}"`}>Read more</Button>
     </Link>
   </StyledArticleCardContainer>
 );
