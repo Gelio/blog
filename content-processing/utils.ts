@@ -16,11 +16,24 @@ export const safeParseSchema =
       result.success ? either.right(result.data) : either.left(result.error)
     );
 
-const getVercelSiteURL: ioOption.IOOption<URL> = () =>
-  pipe(
-    option.fromNullable(process.env.VERCEL_URL),
-    option.map((host) => new URL(`https://${host}/`))
-  );
+const getEnvironmentVariable =
+  (name: string): ioOption.IOOption<string> =>
+  () =>
+    option.fromNullable(process.env[name]);
+
+const getVercelSiteURL = pipe(
+  // @see https://vercel.com/docs/concepts/projects/environment-variables#system-environment-variables
+  getEnvironmentVariable("VERCEL_ENV"),
+  ioOption.chain((vercelEnv) => {
+    switch (vercelEnv) {
+      case "production":
+        return () => option.some("www.gregroz.me");
+      default:
+        return getEnvironmentVariable("VERCEL_URL");
+    }
+  }),
+  ioOption.map((host) => new URL(`https://${host}`))
+);
 
 export const getSiteURL = pipe(
   getVercelSiteURL,

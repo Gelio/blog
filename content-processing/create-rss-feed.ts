@@ -24,7 +24,7 @@ const createRSSFeed = pipe(
         date: new Date(article.date),
         // TODO: possibly strip out Markdown
         description: article.summary,
-        url: `${siteURL}articles/${article.slug}`,
+        url: `${siteURL}article/${article.slug}`,
       })
     );
 
