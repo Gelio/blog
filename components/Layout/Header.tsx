@@ -36,6 +36,7 @@ export const Header = () => {
           href="/rss.xml"
           target="_blank"
           rel="noopener"
+          aria-label="RSS feed for the blog"
         >
           <RSSIcon />
         </StyledIconLink>
@@ -43,6 +44,7 @@ export const Header = () => {
           href={githubProfileLink}
           target="_blank"
           rel="noopener"
+          aria-label="My GitHub profile"
         >
           <GitHubIcon />
         </StyledIconLink>
