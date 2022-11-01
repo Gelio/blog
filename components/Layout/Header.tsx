@@ -93,7 +93,6 @@ const GitHubIcon = () => {
       src="/images/github.svg"
       width={size}
       height={size}
-      layout="fixed"
     />
   );
 };
@@ -118,7 +117,6 @@ const RSSIcon = () => {
       src="/images/rss.svg"
       width={size}
       height={size}
-      layout="fixed"
     />
   );
 };

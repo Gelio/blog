@@ -21,14 +21,21 @@ export const MDXLink: MDXComponents["a"] = (props) =>
     })()
   );
 
+const ResponsiveImage = styled(Image)({
+  maxWidth: "100%",
+  height: "100%",
+});
+
 export const MDXImage: MDXComponents["img"] = (props) => (
-  <Image
+  <ResponsiveImage
+    {...props}
     // NOTE: required to fix a TS error
     src={props.src as string}
     // NOTE: required to tell ESLint we do pass `alt`
-    alt={props.alt}
-    {...props}
-    layout="responsive"
+    alt={props.alt as string}
+    // NOTE: required to fix a TS error
+    width={props.width as number}
+    height={props.height as number}
     // TODO: implement blur placeholders for all photos
     placeholder="empty"
   />

@@ -39,9 +39,6 @@ export const AboutPage = () => {
           <StyledHeroImage
             src={meImage}
             alt="A picture of me in Vienna"
-            width={4000}
-            height={2250}
-            layout="responsive"
             placeholder="blur"
           />
         </StyledHeroImageContainer>
@@ -105,25 +102,6 @@ const StyledAboutParagraph = styled(Paragraph)(({ theme }) => ({
   marginBlockEnd: theme.spacing(1),
 }));
 
-const portraitPhotoStyles = {
-  container: {
-    "> span": {
-      // NOTE: need to override the style applied directly to the element using
-      // the `style` attribute
-      overflow: "visible !important",
-    },
-
-    "::after": {
-      display: "block",
-      content: "''",
-      paddingBlockStart: "56.5%",
-    },
-  },
-  image: {
-    transform: `scale(2.15) translate(-5%, 21%)`,
-  },
-};
-
 // NOTE: next/image is comprised of many elements but only the innermost `img`
 // can be styled. This results in clipped box-shadow of the image. Thus, those
 // properties must be applied through a container.
@@ -133,18 +111,22 @@ const StyledHeroImageContainer = styled("div")(({ theme }) => ({
   overflow: "hidden",
   marginBlockEnd: theme.spacing(2),
   gridColumn: 1,
+  aspectRatio: "4/3",
 
-  [mediaQueries.portraitPhotoMobile]: portraitPhotoStyles.container,
+  [mediaQueries.portraitPhotoMobile]: {
+    aspectRatio: "3/4",
+  },
+
   [mediaQueries.desktop]: {
-    ...portraitPhotoStyles.container,
+    aspectRatio: "3/4",
     gridColumn: 2,
     gridRow: "1 / 3",
   },
 }));
 
 const StyledHeroImage = styled(Image)({
-  transform: `scale(1.15) translate(-5%, -5%)`,
-
-  [mediaQueries.portraitPhotoMobile]: portraitPhotoStyles.image,
-  [mediaQueries.desktop]: portraitPhotoStyles.image,
+  objectFit: "cover",
+  objectPosition: "60%",
+  width: "100%",
+  height: "100%",
 });
