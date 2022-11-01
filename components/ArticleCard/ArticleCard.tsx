@@ -2,7 +2,6 @@ import styled from "@emotion/styled";
 import Link from "next/link";
 import type { ComponentProps, ElementType, ReactNode } from "react";
 
-import { rem, spacing } from "../../styles/theme";
 import { articleTitleStyle } from "../../styles/typography";
 import { ArticleMeta } from "../ArticleMeta";
 import { getArticlePagePath } from "../ArticlePage/route";
@@ -26,7 +25,7 @@ export const ArticleCard = ({
   readingTimeMin,
   createdDate,
 }: ArticleCardProps) => (
-  <StyledArticleCardContainer className={className} as="article">
+  <StyledArticleCardContainer className={className}>
     <StyledArticleCardTitle as={titleAs}>{title}</StyledArticleCardTitle>
 
     <ArticleMeta
@@ -43,13 +42,13 @@ export const ArticleCard = ({
   </StyledArticleCardContainer>
 );
 
-const StyledArticleCardContainer = styled("div")(({ theme }) => ({
-  borderRadius: rem(spacing(1)),
+const StyledArticleCardContainer = styled("article")(({ theme }) => ({
+  borderRadius: theme.spacing(1),
   backgroundColor: theme.color.primary.light,
   display: "flex",
   flexDirection: "column",
-  gap: rem(spacing(1)),
-  padding: rem(spacing(2)),
+  gap: theme.spacing(1),
+  padding: theme.spacing(2),
 }));
 
 const StyledArticleCardTitle = styled("h2")(articleTitleStyle, { margin: 0 });

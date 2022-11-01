@@ -1,3 +1,11 @@
+export const htmlFontSizePx = 16;
+
+/** Converts pixels (used in the mockups) into rems (used for accessible font scaling) */
+export const pxToRem = (px: number) => `${px / htmlFontSizePx}rem`;
+
+/** Returns the number of pixels for consistent whitespace (margins, paddings) */
+export const spacing = (multiple: number) => multiple * 8;
+
 export const blogTheme = {
   color: {
     primary: {
@@ -18,6 +26,8 @@ export const blogTheme = {
       border: "rgba(43, 33, 24, 0.3)",
     },
   },
+  spacing,
+  pxToRem,
 } as const;
 
 type BlogTheme = typeof blogTheme;
@@ -26,10 +36,4 @@ declare module "@emotion/react" {
   export interface Theme extends BlogTheme {}
 }
 
-export const htmlFontSizePx = 16;
-/** Converts pixels (used in the mockups) into rems (used for accessible font scaling) */
-export const rem = (px: number) => `${px / htmlFontSizePx}rem`;
-/** Returns the number of pixels for consistent whitespace (margins, paddings) */
-export const spacing = (multiple: number) => multiple * 8;
-
-export const containerWidth = rem(800);
+export const containerWidth = "800px";

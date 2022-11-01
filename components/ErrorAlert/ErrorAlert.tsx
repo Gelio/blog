@@ -4,7 +4,6 @@ import {
   responsiveContainer,
   responsiveContainerInlinePadding,
 } from "../../styles/layout";
-import { rem, spacing } from "../../styles/theme";
 
 export const ErrorAlert = ({ children }: { children: ReactNode }) => {
   return <div>{children}</div>;
@@ -16,8 +15,8 @@ export const ErrorAlertContainer = styled("div")(
   ({ theme }) => ({
     backgroundColor: theme.color.error.background,
     border: `solid 1px ${theme.color.error.border}`,
-    padding: rem(spacing(2)),
-    borderRadius: rem(spacing(1)),
+    padding: theme.spacing(2),
+    borderRadius: theme.spacing(1),
   })
 );
 
@@ -37,9 +36,9 @@ export const DevOnlyErrorDetails = ({ error }: { error: unknown }) => {
 
 const SerializedError = styled("pre")(({ theme }) => ({
   backgroundColor: theme.color.background.light,
-  padding: rem(spacing(3)),
-  borderRadius: rem(spacing(1)),
+  padding: theme.spacing(3),
+  borderRadius: theme.spacing(1),
   border: `solid 1px ${theme.color.text.main}`,
-  marginBlockStart: rem(spacing(2)),
+  marginBlockStart: theme.spacing(2),
   marginBlockEnd: 0,
 }));

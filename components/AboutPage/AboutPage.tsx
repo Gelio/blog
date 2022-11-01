@@ -5,7 +5,7 @@ import {
   responsiveContainer,
   responsiveContainerInlinePadding,
 } from "../../styles/layout";
-import { containerWidth, rem, spacing } from "../../styles/theme";
+import { containerWidth } from "../../styles/theme";
 import { headingStyle } from "../../styles/typography";
 import { Layout } from "../Layout";
 import { HeadDocumentTitle, HeadMetaDescription } from "../../seo";
@@ -79,16 +79,16 @@ const StyledMainContent = styled("main")(
   pageContentMarginTop,
   responsiveContainer,
   responsiveContainerInlinePadding,
-  {
+  ({ theme }) => ({
     display: "grid",
-    columnGap: rem(spacing(2)),
+    columnGap: theme.spacing(2),
     [mediaQueries.desktop]: {
       gridTemplateColumns: "repeat(2, 1fr)",
       // NOTE: keep the second row of text close to the first row,
       // so the paragraphs appear as a single column.
       gridTemplateRows: "min-content 1fr",
     },
-  }
+  })
 );
 
 const StyledAlwaysLeftColumn = styled("div")({
@@ -101,9 +101,9 @@ const StyledAccent = styled("span")(({ theme }) => ({
   color: theme.color.primary.main,
 }));
 
-const StyledAboutParagraph = styled(Paragraph)({
-  marginBlockEnd: rem(spacing(1)),
-});
+const StyledAboutParagraph = styled(Paragraph)(({ theme }) => ({
+  marginBlockEnd: theme.spacing(1),
+}));
 
 const portraitPhotoStyles = {
   container: {
@@ -127,11 +127,11 @@ const portraitPhotoStyles = {
 // NOTE: next/image is comprised of many elements but only the innermost `img`
 // can be styled. This results in clipped box-shadow of the image. Thus, those
 // properties must be applied through a container.
-const StyledHeroImageContainer = styled("div")({
-  borderRadius: rem(spacing(2)),
-  boxShadow: `${rem(4)} ${rem(4)} ${rem(4)} rgba(0, 0, 0, 0.25)`,
+const StyledHeroImageContainer = styled("div")(({ theme }) => ({
+  borderRadius: theme.spacing(2),
+  boxShadow: `4px 4px 4px rgba(0, 0, 0, 0.25)`,
   overflow: "hidden",
-  marginBlockEnd: rem(spacing(2)),
+  marginBlockEnd: theme.spacing(2),
   gridColumn: 1,
 
   [mediaQueries.portraitPhotoMobile]: portraitPhotoStyles.container,
@@ -140,7 +140,7 @@ const StyledHeroImageContainer = styled("div")({
     gridColumn: 2,
     gridRow: "1 / 3",
   },
-});
+}));
 
 const StyledHeroImage = styled(Image)({
   transform: `scale(1.15) translate(-5%, -5%)`,

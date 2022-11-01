@@ -9,7 +9,6 @@ import {
   responsiveContainer,
   responsiveContainerInlinePadding,
 } from "../../styles/layout";
-import { rem, spacing } from "../../styles/theme";
 import {
   IndexedArticleMetadataWithSerializedSummary,
   IndexedArticleCard,
@@ -73,10 +72,10 @@ const StyledMainContent = styled("main")(
 const StyledArticleCardsContainer = styled("div")(
   responsiveContainer,
   responsiveContainerInlinePadding,
-  {
+  ({ theme }) => ({
     display: "flex",
     flexDirection: "column",
-    gap: rem(spacing(2)),
-    marginBlockStart: rem(spacing(2)),
-  }
+    gap: theme.spacing(2),
+    marginBlockStart: theme.spacing(2),
+  })
 );

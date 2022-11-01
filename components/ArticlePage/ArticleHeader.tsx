@@ -5,7 +5,6 @@ import {
   responsiveContainer,
   responsiveContainerInlinePadding,
 } from "../../styles/layout";
-import { rem, spacing } from "../../styles/theme";
 import { articleTitleStyle } from "../../styles/typography";
 import { ArticleMeta } from "../ArticleMeta";
 
@@ -33,13 +32,13 @@ export const ArticleHeader = ({
 const StyledArticleHeader = styled("div")(
   responsiveContainer,
   responsiveContainerInlinePadding,
-  {
-    marginBlockEnd: rem(spacing(2)),
-  }
+  ({ theme }) => ({
+    marginBlockEnd: theme.spacing(2),
+  })
 );
 
-const StyledArticleTitle = styled("h1")(articleTitleStyle, {
+const StyledArticleTitle = styled("h1")(articleTitleStyle, ({ theme }) => ({
   // NOTE: reset the default margin-block-start
   marginBlockStart: 0,
-  marginBlockEnd: rem(spacing(1)),
-});
+  marginBlockEnd: theme.spacing(1),
+}));

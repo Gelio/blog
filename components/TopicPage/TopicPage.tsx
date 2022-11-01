@@ -7,7 +7,6 @@ import {
   responsiveContainer,
   responsiveContainerInlinePadding,
 } from "../../styles/layout";
-import { rem, spacing } from "../../styles/theme";
 import { headingStyle } from "../../styles/typography";
 import {
   IndexedArticleMetadataWithSerializedSummary,
@@ -105,32 +104,35 @@ const StyledMainContent = styled("main")(
   pageContentMarginTop
 );
 
-const StyledPageTitle = styled("h1")(headingStyle, {
-  marginBlockStart: spacing(3),
-  marginBlockEnd: spacing(2),
-});
+const StyledPageTitle = styled("h1")(headingStyle, ({ theme }) => ({
+  marginBlockStart: theme.spacing(3),
+  marginBlockEnd: theme.spacing(2),
+}));
 
 const StyledArticleCardsContainer = styled("div")(
   responsiveContainer,
   responsiveContainerInlinePadding,
-  {
+  ({ theme }) => ({
     display: "flex",
     flexDirection: "column",
-    gap: rem(spacing(2)),
-  }
+    gap: theme.spacing(2),
+  })
 );
 
-const maxButtonsGap = rem(200);
-const StyledPaginationContainer = styled("div")(responsiveContainer, {
-  marginBlock: rem(spacing(3)),
-  paddingInline: rem(spacing(2)),
+const maxButtonsGap = "200px";
+const StyledPaginationContainer = styled("div")(
+  responsiveContainer,
+  ({ theme }) => ({
+    marginBlock: theme.spacing(3),
+    paddingInline: theme.spacing(2),
 
-  display: "grid",
-  // NOTE: the gap must shrink if there is not enough space.
-  // Using `column-gap` is not possible, because it does not allow using
-  // `minmax`
-  gridTemplateColumns: `1fr minmax(min-content, ${maxButtonsGap}) 1fr`,
-});
+    display: "grid",
+    // NOTE: the gap must shrink if there is not enough space.
+    // Using `column-gap` is not possible, because it does not allow using
+    // `minmax`
+    gridTemplateColumns: `1fr minmax(min-content, ${maxButtonsGap}) 1fr`,
+  })
+);
 
 const NavigationButton = styled(Button)({
   marginBlockStart: 0,

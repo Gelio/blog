@@ -3,7 +3,6 @@ import type { Components as MDXComponents } from "@mdx-js/react/lib";
 import Image from "next/image";
 import Link from "next/link";
 import { createContext, useContext } from "react";
-import { rem, spacing } from "../../styles/theme";
 import {
   ArticleHeading2,
   ArticleHeading3,
@@ -39,8 +38,8 @@ export const BlockQuote = styled("blockquote")(({ theme }) => ({
   borderInlineStart: "solid 3px",
   borderColor: theme.color.primary.main,
 
-  marginInlineStart: rem(spacing(1)),
-  paddingInlineStart: rem(spacing(2)),
+  marginInlineStart: theme.spacing(1),
+  paddingInlineStart: theme.spacing(2),
 }));
 
 const InsideCodeBlockContext = createContext(false);
@@ -56,9 +55,9 @@ export const Pre: MDXComponents["pre"] = (props) => {
 export const StyledInlineCode = styled("code")(({ theme }) => ({
   backgroundColor: theme.color.text.onDarkBackground,
   border: `solid 1px ${theme.color.background.light}`,
-  borderRadius: spacing(1),
-  paddingBlock: spacing(0.25),
-  paddingInline: spacing(0.5),
+  borderRadius: theme.spacing(1),
+  paddingBlock: theme.spacing(0.25),
+  paddingInline: theme.spacing(0.5),
   wordBreak: "break-word",
 }));
 
@@ -72,10 +71,10 @@ export const InlineCode: MDXComponents["code"] = (props) => {
   }
 };
 
-export const ListItem = styled("li")({
-  marginBlockEnd: spacing(2),
-  fontSize: rem(18),
-});
+export const ListItem = styled("li")(({ theme }) => ({
+  marginBlockEnd: theme.spacing(2),
+  fontSize: theme.pxToRem(18),
+}));
 
 export const baseMDXComponents = {
   a: MDXLink,
