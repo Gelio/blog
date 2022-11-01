@@ -101,7 +101,7 @@ const StyledIconLink = styled("a")(({ theme }) => ({
   textDecoration: "none",
   transition: "filter ease-in-out 200ms",
   "--shadowRadius": "1px",
-  filter: `drop-shadow(0px 0px var(--shadowRadius) ${theme.color.text.main})`,
+  filter: `drop-shadow(0 0 var(--shadowRadius) ${theme.color.shadow()})`,
   ":hover": {
     "--shadowRadius": "2px",
   },
