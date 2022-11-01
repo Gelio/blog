@@ -1,3 +1,4 @@
+import { useTheme } from "@emotion/react";
 import styled from "@emotion/styled";
 import Image from "next/image";
 import Link from "next/link";
@@ -6,7 +7,6 @@ import {
   responsiveContainer,
   responsiveContainerInlinePadding,
 } from "../../styles/layout";
-import { rem, spacing } from "../../styles/theme";
 import { decorationOnHoverLinkStyle } from "../../styles/typography";
 import { aboutPagePath } from "../AboutPage/route";
 import { homePagePath } from "../HomePage/route";
@@ -56,41 +56,42 @@ export const Header = () => {
 const StyledHeader = styled("header")(
   responsiveContainer,
   responsiveContainerInlinePadding,
-  {
+  ({ theme }) => ({
     display: "flex",
     justifyContent: "space-between",
     alignItems: "center",
-    marginBlockStart: rem(spacing(1)),
-    paddingBlock: rem(spacing(1)),
-  }
+    marginBlockStart: theme.spacing(1),
+    paddingBlock: theme.spacing(1),
+  })
 );
 
 const StyledHeaderLink = styled("a")(
   decorationOnHoverLinkStyle,
   ({ theme }) => ({
     color: theme.color.primary.main,
-    fontSize: rem(20),
+    fontSize: theme.pxToRem(20),
   })
 );
 
-const StyledBlogTitle = styled(StyledHeaderLink)({
-  fontSize: rem(24),
-});
+const StyledBlogTitle = styled(StyledHeaderLink)(({ theme }) => ({
+  fontSize: theme.pxToRem(24),
+}));
 
-const HeaderLinks = styled("nav")({
+const HeaderLinks = styled("nav")(({ theme }) => ({
   display: "flex",
   alignItems: "baseline",
-  gap: rem(spacing(3)),
+  gap: theme.spacing(3),
   flexWrap: "wrap",
-});
+}));
 
-const Sublinks = styled("div")({
+const Sublinks = styled("div")(({ theme }) => ({
   display: "flex",
-  gap: rem(spacing(2)),
-});
+  gap: theme.spacing(2),
+}));
 
 const GitHubIcon = () => {
-  const size = spacing(3);
+  const theme = useTheme();
+  const size = theme.spacing(3);
 
   return (
     <Image
@@ -114,7 +115,8 @@ const StyledIconLink = styled("a")(({ theme }) => ({
 }));
 
 const RSSIcon = () => {
-  const size = spacing(3);
+  const theme = useTheme();
+  const size = theme.spacing(3);
 
   return (
     <Image

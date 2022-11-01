@@ -1,16 +1,15 @@
 import styled from "@emotion/styled";
-import { rem } from "../../styles/theme";
 
-export const ArticleHeading2 = styled("h2")({
+export const ArticleHeading2 = styled("h2")(({ theme }) => ({
   fontWeight: "normal",
-  fontSize: rem(30),
+  fontSize: theme.pxToRem(30),
   marginBlockStart: "3em",
   marginBlockEnd: "1em",
-});
+}));
 
-export const ArticleHeading3 = styled("h3")({
+export const ArticleHeading3 = styled("h3")(({ theme }) => ({
   fontWeight: "normal",
-  fontSize: rem(24),
+  fontSize: theme.pxToRem(24),
   marginBlockStart: "3em",
   marginBlockEnd: "1em",
-});
+}));

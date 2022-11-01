@@ -1,14 +1,13 @@
 import { css } from "@emotion/react";
-
-import { rem } from "./theme";
+import { pxToRem } from "./theme";
 
 export const articleTitleStyle = css({
-  fontSize: rem(28),
+  fontSize: pxToRem(28),
   fontWeight: "normal",
 });
 
 export const headingStyle = css({
-  fontSize: rem(28),
+  fontSize: pxToRem(28),
   fontWeight: "normal",
 });
 

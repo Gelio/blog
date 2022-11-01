@@ -3,7 +3,6 @@ import {
   responsiveContainer,
   responsiveContainerInlinePadding,
 } from "../../styles/layout";
-import { rem, spacing } from "../../styles/theme";
 
 export const Footer = () => (
   <StyledFooterText>
@@ -16,9 +15,9 @@ const StyledFooterText = styled("footer")(
   responsiveContainerInlinePadding,
   ({ theme }) => ({
     color: theme.color.text.desaturated,
-    fontSize: rem(14),
-    paddingBlockEnd: rem(spacing(2)),
-    height: rem(spacing(5)),
+    fontSize: theme.pxToRem(14),
+    paddingBlockEnd: theme.spacing(2),
+    height: theme.spacing(5),
 
     display: "flex",
     alignItems: "end",

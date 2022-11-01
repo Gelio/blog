@@ -8,7 +8,6 @@ import {
   responsiveContainer,
   responsiveContainerInlinePadding,
 } from "../../styles/layout";
-import { rem, spacing } from "../../styles/theme";
 import {
   decorationOnHoverLinkStyle,
   headingStyle,
@@ -73,16 +72,16 @@ const StyledMainHeading = styled("h1")(headingStyle);
 const TopicsContainer = styled("main")(
   responsiveContainer,
   responsiveContainerInlinePadding,
-  {
-    marginTop: rem(spacing(2)),
+  ({ theme }) => ({
+    marginTop: theme.spacing(2),
     display: "flex",
     flexWrap: "wrap",
-    columnGap: rem(spacing(3)),
-    rowGap: rem(spacing(2)),
-  }
+    columnGap: theme.spacing(3),
+    rowGap: theme.spacing(2),
+  })
 );
 
 const TopicLink = styled("a")(decorationOnHoverLinkStyle, ({ theme }) => ({
   color: theme.color.primary.main,
-  fontSize: rem(18),
+  fontSize: theme.pxToRem(18),
 }));

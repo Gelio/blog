@@ -1,6 +1,5 @@
 import styled from "@emotion/styled";
 
-import { rem, spacing } from "../../styles/theme";
 import { Tags } from "../Tags";
 
 interface ArticleMetaProps {
@@ -27,16 +26,16 @@ export const ArticleMeta = ({
   </StyledArticleMetaContainer>
 );
 
-const StyledArticleMetaContainer = styled("div")({
+const StyledArticleMetaContainer = styled("div")(({ theme }) => ({
   display: "flex",
-  columnGap: rem(spacing(4)),
-  rowGap: rem(spacing(1)),
+  columnGap: theme.spacing(4),
+  rowGap: theme.spacing(1),
   flexWrap: "wrap",
-});
+}));
 
 const StyledArticleMetaItem = styled("span")(({ theme }) => ({
   color: theme.color.text.desaturated,
-  fontSize: rem(16),
+  fontSize: theme.pxToRem(16),
 }));
 
 const formatDateString = (dateString: string) => {
