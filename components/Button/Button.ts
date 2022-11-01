@@ -11,14 +11,16 @@ export const Button = styled("a")(({ theme }) => ({
   textDecoration: "none",
   paddingBlock: theme.spacing(1),
   paddingInline: theme.spacing(2),
-  transition: "background-color ease-in-out 200ms",
+  transition: "all ease-in-out 200ms",
   fontSize: theme.pxToRem(14),
   lineHeight: 1.5,
   width: "fit-content",
+  boxShadow: `${theme.shadow(0.25)} ${theme.color.shadow(0.25)}`,
 
   border: "none",
 
   ":hover": {
     backgroundColor: "#288FC8",
+    boxShadow: `${theme.shadow(0.5)} ${theme.color.shadow(0.25)}`,
   },
 }));

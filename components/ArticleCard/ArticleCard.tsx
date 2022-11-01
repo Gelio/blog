@@ -49,6 +49,7 @@ const StyledArticleCardContainer = styled("article")(({ theme }) => ({
   flexDirection: "column",
   gap: theme.spacing(1),
   padding: theme.spacing(2),
+  boxShadow: `${theme.shadow(0.25)} ${theme.color.shadow(0.2)}`,
 }));
 
 const StyledArticleCardTitle = styled("h2")(articleTitleStyle, { margin: 0 });

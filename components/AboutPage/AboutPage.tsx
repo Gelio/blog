@@ -129,7 +129,7 @@ const portraitPhotoStyles = {
 // properties must be applied through a container.
 const StyledHeroImageContainer = styled("div")(({ theme }) => ({
   borderRadius: theme.spacing(2),
-  boxShadow: `4px 4px 4px rgba(0, 0, 0, 0.25)`,
+  boxShadow: `${theme.shadow(0.5)} ${theme.color.shadow(0.3)}`,
   overflow: "hidden",
   marginBlockEnd: theme.spacing(2),
   gridColumn: 1,

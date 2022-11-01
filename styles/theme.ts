@@ -25,9 +25,17 @@ export const blogTheme = {
       background: "#FFECEC",
       border: "rgba(43, 33, 24, 0.3)",
     },
+    shadow: (alpha = 1) => `hsl(201, 67%, 34%, ${alpha})`,
   },
   spacing,
   pxToRem,
+  /** The lengths used to define a box-shadow. Does not contain the color */
+  shadow: (elevation: number) => {
+    // Technique similar to
+    // https://www.joshwcomeau.com/css/designing-shadows/#creating-a-consistent-environment
+    const distance = spacing(elevation);
+    return `${distance}px ${distance * 2}px ${distance * 2}px`;
+  },
 } as const;
 
 type BlogTheme = typeof blogTheme;

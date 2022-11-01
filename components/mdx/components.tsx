@@ -47,10 +47,14 @@ const InsideCodeBlockContext = createContext(false);
 export const Pre: MDXComponents["pre"] = (props) => {
   return (
     <InsideCodeBlockContext.Provider value={true}>
-      <pre {...props} />
+      <StyledPre {...props} />
     </InsideCodeBlockContext.Provider>
   );
 };
+
+const StyledPre = styled("pre")(({ theme }) => ({
+  boxShadow: `${theme.shadow(0.25)} ${theme.color.shadow(0.4)}`,
+}));
 
 export const StyledInlineCode = styled("code")(({ theme }) => ({
   backgroundColor: theme.color.text.onDarkBackground,
