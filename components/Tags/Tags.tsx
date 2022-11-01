@@ -19,12 +19,12 @@ export const Tags = ({ names }: TagsProps) => (
 );
 
 const Tag = ({ name }: { name: string }) => (
-  <Link href={getTopicPagePath(name)} passHref>
-    <StyledTagLink aria-label={`Topic: ${name}`}>{name}</StyledTagLink>
-  </Link>
+  <StyledTagLink href={getTopicPagePath(name)} aria-label={`Topic: ${name}`}>
+    {name}
+  </StyledTagLink>
 );
 
-const StyledTagLink = styled("a")(({ theme }) => ({
+const StyledTagLink = styled(Link)(({ theme }) => ({
   textDecoration: "underline",
   transition: "color 200ms ease-in-out",
   ":hover": {

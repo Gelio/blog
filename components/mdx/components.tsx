@@ -12,7 +12,7 @@ import {
 
 export const MDXLink: MDXComponents["a"] = (props) =>
   props.href ? (
-    <Link href={props.href} passHref>
+    <Link href={props.href} passHref legacyBehavior>
       <ParagraphLink {...props} />
     </Link>
   ) : (

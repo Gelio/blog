@@ -49,9 +49,9 @@ export const TopicsPage = ({ topicsResult }: TopicsPageProps) => {
           (topics) => (
             <TopicsContainer>
               {topics.map((topic) => (
-                <Link href={getTopicPagePath(topic)} passHref key={topic}>
-                  <TopicLink>{topic}</TopicLink>
-                </Link>
+                <TopicLink href={getTopicPagePath(topic)} key={topic}>
+                  {topic}
+                </TopicLink>
               ))}
             </TopicsContainer>
           )
@@ -81,7 +81,7 @@ const TopicsContainer = styled("main")(
   })
 );
 
-const TopicLink = styled("a")(decorationOnHoverLinkStyle, ({ theme }) => ({
+const TopicLink = styled(Link)(decorationOnHoverLinkStyle, ({ theme }) => ({
   color: theme.color.primary.main,
   fontSize: theme.pxToRem(18),
 }));

@@ -16,18 +16,12 @@ export const Header = () => {
   return (
     <StyledHeader>
       <HeaderLinks>
-        <Link href={homePagePath} passHref>
-          <StyledBlogTitle>Greg Rozdzialik</StyledBlogTitle>
-        </Link>
+        <StyledBlogTitle href={homePagePath}>Greg Rozdzialik</StyledBlogTitle>
 
         <Sublinks>
-          <Link href={topicsPagePath} passHref>
-            <StyledHeaderLink>Topics</StyledHeaderLink>
-          </Link>
+          <StyledHeaderLink href={topicsPagePath}>Topics</StyledHeaderLink>
 
-          <Link href={aboutPagePath} passHref>
-            <StyledHeaderLink>About</StyledHeaderLink>
-          </Link>
+          <StyledHeaderLink href={aboutPagePath}>About</StyledHeaderLink>
         </Sublinks>
       </HeaderLinks>
 
@@ -65,7 +59,7 @@ const StyledHeader = styled("header")(
   })
 );
 
-const StyledHeaderLink = styled("a")(
+const StyledHeaderLink = styled(Link)(
   decorationOnHoverLinkStyle,
   ({ theme }) => ({
     color: theme.color.primary.main,
