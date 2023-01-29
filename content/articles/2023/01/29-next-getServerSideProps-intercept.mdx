@@ -1,0 +1,119 @@
+---
+title: Next.js getServerSideProps interception
+date: 2023-01-29
+tags: JavaScript, React, Next.js
+slug: nextjs-getServerSideProps-interception
+summary:
+  Next.js can seem stuck fetching `getServerSideProps` result on client-side
+  navigations. The approach outlined in the article bypasses making that network
+  request, resulting in snappier UI, suitable for highly-interactive web
+  applications.
+---
+
+When a [Next.js](https://nextjs.org/) page has
+[`getServerSideProps`](https://nextjs.org/docs/basic-features/data-fetching/get-server-side-props)
+defined, Next will always fetch it before rendering the page. This happens even
+if it was fetched already. While it is nice to have the assurance that the page
+will always show the most up-to-date information, this behavior does not suit
+highly-interactive web applications which need instant feedback on navigation.
+The problem is exacerbated when `getServerSideProps` takes a long time to return
+the data.
+
+This behavior can be circumvented on a per-route basis. We need to hook into the
+Next router and lie to it that a given page does not have `getServerSideProps`.
+Next will assume that it does not need to make that network request and will
+instead render the page. It is up to the page component to render previous data
+in that case or show a loading indicator while loading the data it would have
+otherwise received from `getServerSideProps`.
+
+The main idea behind this interception is implemented in the following
+`useNextServerSidePropsInterception` hook
+([source code](https://github.com/Gelio/next-intercept-ssr-navigation/blob/main/src/intercept-getServerSideProps.ts),
+[GitHub repository](https://github.com/Gelio/next-intercept-ssr-navigation),
+[CodeSandbox](https://codesandbox.io/p/github/Gelio/next-intercept-ssr-navigation),
+[demo page](https://next-intercept-ssr-navigation.vercel.app/)).
+
+```typescript
+export const useNextServerSidePropsInterception = ({
+  enabled,
+}: {
+  enabled: boolean;
+}) => {
+  useEffect(() => {
+    // NOTE: remove existing information about the /pizza route
+    // so Next does not "remember" whether it had getServerSideProps or not
+    // @see https://github.com/vercel/next.js/blob/13b32ba98179aa94ac2e402f272e5c6a3356d310/packages/next/src/shared/lib/router/router.ts#L971
+    delete SingletonRouter.router?.components["/pizza"];
+
+    if (!enabled) {
+      return;
+    }
+
+    const pageLoader = SingletonRouter.router?.pageLoader;
+    if (!pageLoader) {
+      return;
+    }
+
+    const { loadPage: originalLoadPage } = pageLoader;
+
+    // NOTE: intercept `loadPage` calls to prevent fetching Next data when
+    // navigating to some pages
+    // @see https://github.com/vercel/next.js/blob/9c6d56122bfe7cc6aef066cad88ee477a60a340a/packages/next/src/client/page-loader.ts#L155-L169
+    pageLoader.loadPage = async (...args) => {
+      return originalLoadPage.apply(pageLoader, args).then((pageCache) => ({
+        ...pageCache,
+        mod: {
+          ...pageCache.mod,
+          // NOTE: behave as if there is no `getServerSideProps` for the
+          // page so Next won't fetch the result from the server
+          // @see https://github.com/vercel/next.js/blob/9c6d56122bfe7cc6aef066cad88ee477a60a340a/packages/next/src/shared/lib/router/router.ts#L2165
+          __N_SSP: false,
+        },
+      }));
+    };
+
+    return () => {
+      pageLoader.loadPage = originalLoadPage;
+    };
+  }, [enabled]);
+};
+```
+
+The main idea is to disable `__N_SSP` for a specific page. This lets Next know
+that it does not need to fetch the result of `getServerSideProps` by having
+[`shouldFetchData` equal to `false`](https://github.com/vercel/next.js/blob/9c6d56122bfe7cc6aef066cad88ee477a60a340a/packages/next/src/shared/lib/router/router.ts#L2165).
+
+We also need to wipe cached `__N_SSP` information in
+`SingletonRouter.router.components` for pages we care about. This is only
+relevant if you enable this interception conditionally. If it is always enabled
+for some pages, the `delete` call is unnecessary.
+
+The code above will disable fetching `getServerSideProps` for all pages. When
+used in your app, you probably want to add some condition to the monkey-patched
+`loadPage` so it only bypasses the requests on some routes that you care about.
+
+When the `getServerSideProps` interception is enabled, the `/pizza` page will
+show:
+
+- a loading indicator, and start loading the data in the background, if it is
+  the first time the user is visiting the site,
+- previous results, if the page was visited by the user before.
+
+## Why not remove `getServerSideProps`
+
+We could remove `getServerSideProps` to achieve similar in-browser data-fetching
+behavior. However, such a page would become a static site and would not include
+the data in the server-sent HTML. It would likely hurt SEO, as the data would be
+only available for clients with JavaScript enabled, and only after the page is
+loaded.
+
+## Streaming in Next `app/` directory
+
+This problem of having loading indicator during navigation could be solved by
+using
+[React Streaming](https://beta.nextjs.org/docs/data-fetching/streaming-and-suspense).
+It [is available](https://beta.nextjs.org/docs/app-directory-roadmap) in the
+Next `app` directory.
+
+The solution shown above is for pages that still use the Next `pages` directory
+and `next/router`.

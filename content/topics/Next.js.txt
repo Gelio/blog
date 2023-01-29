@@ -1,0 +1,2 @@
+Next.js is a React meta-framework that adds server-side rendering, opinionated
+routing, an many other features on top of plain React.
