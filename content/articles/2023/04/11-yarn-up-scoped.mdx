@@ -1,0 +1,38 @@
+---
+title: Upgrade scoped packages with yarn
+date: 2023-04-11
+tags: JavaScript, Yarn
+slug: yarn-up-scoped
+summary:
+  yarn up '*' does not upgrade scoped packages by default. This article
+  describes how to upgrade scoped packages.
+---
+
+`yarn up '*'` upgrades only unscoped packages.
+
+Scoped packages are those that start with `@` and have 2 parts (the scope and
+the name) separated with a slash, e.g. `@types/node`.
+
+To upgrade scoped packages, use `yarn up '*/*'`.
+
+Make sure to surround the argument with quotes so it does not undergo
+[shell filename expansion](https://www.gnu.org/software/bash/manual/html_node/Filename-Expansion.html).
+
+## Reason
+
+[`yarn up` uses the `parseDescriptor` function](https://github.com/yarnpkg/berry/blob/cb2eecc859145235dcab6e338b264069c64ba027/packages/plugin-essentials/sources/commands/up.ts#L188)
+to parse the patterns from the command line arguments. It parses the argument
+and
+[sets the scope to `null` if it is not provided](https://github.com/yarnpkg/berry/blob/cb2eecc859145235dcab6e338b264069c64ba027/packages/yarnpkg-core/sources/structUtils.ts#L397-L399).
+
+In the case of just `*`, the descriptor's `name` will be parsed to `*`, but the
+`scope` will be set to `null`. This targets only unscoped packages.
+
+## Related resources
+
+1. [https://github.com/yarnpkg/berry/issues/3550](https://github.com/yarnpkg/berry/issues/3550) -
+   issue on the yarn repository to change `yarn up *` to upgrade both scoped and
+   unscoped packages.
+
+2. [https://yarnpkg.com/cli/up](https://yarnpkg.com/cli/up) - `yarn up`
+   documentation
