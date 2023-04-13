@@ -1,0 +1,2 @@
+Figma is a web app that facilitates web design. It runs entirely in the browser
+and has collaboration features.
