@@ -1,0 +1,159 @@
+---
+title: Type-safe nullability without strictNullChecks
+date: 2023-05-10
+tags: fp-ts, TypeScript
+slug: type-safe-nullability-without-strictNullChecks
+summary:
+  Lack of strictNullChecks makes it hard to express nullability of values.
+  [fp-ts's `Option`](https://gcanti.github.io/fp-ts/modules/Option.ts.html)
+  comes to the type-safe rescue.
+---
+
+TypeScript's
+[`strictNullChecks`](https://www.typescriptlang.org/tsconfig#strictNullChecks)
+changes the assignability rules of `null` and `undefined`. They will no longer
+be assignable to any value.
+
+Compare the behavior for the following snippet with `strictNullChecks` enabled
+([TS playground](https://www.typescriptlang.org/play?strictNullChecks=false#code/CYUwxgNghgTiAEAzArgOzAFwJYHtVJxwAoA3KCZEALngGcMYtUBzAShpJy2AG4BYAFCDEhIqmQQIrHvAD0s+BhwZyEAJ5ImIIA))
+and disabled
+([TS playground](https://www.typescriptlang.org/play?#code/CYUwxgNghgTiAEAzArgOzAFwJYHtVJxwAoA3KCZEALngGcMYtUBzAShpJy2AG4BYAFCDEhIqmQQIrHvAD0s+BhwZyEAJ5ImIIA)):
+
+```ts
+declare function foo(value: string): void;
+
+foo(null);
+```
+
+When that compiler options is turned off, TypeScript is fine with passing `null`
+(or `undefined`) in any position, even if the type does not say that these
+nullable values are allowed. This is rectified by enabling the option, which
+produces a compilation error:
+
+> Argument of type 'null' is not assignable to parameter of type 'string'.
+
+Turning on that option in a TypeScript project is either all or nothing. There
+is no easy way to enable it incrementally only for some part of the project
+(although you can look at
+[loose-ts-check](https://github.com/Gelio/loose-ts-check) which I wrote which
+aims to allow this incremental approach). This makes code migrations hard.
+
+What if we want to express nullability in a type-safe way while being
+constrained to keep `strictNullChecks` disabled?
+
+## fp-ts's Option to the rescue
+
+One way to model nullability is with the fp-ts's
+[`Option`](https://gcanti.github.io/fp-ts/modules/Option.ts.html) type. It
+represents nullable values with
+[the `None` object](https://github.com/gcanti/fp-ts/blob/8674480341fd0cf2847091a8daa6276d8e41f41e/src/Option.ts#L114-L116):
+
+```ts
+export interface None {
+  readonly _tag: "None";
+}
+```
+
+A defined value of type `A` is represented with
+[the `Some<A>` object](https://github.com/gcanti/fp-ts/blob/8674480341fd0cf2847091a8daa6276d8e41f41e/src/Option.ts#L122-L125):
+
+```ts
+export interface Some<A> {
+  readonly _tag: "Some";
+  readonly value: A;
+}
+```
+
+They are combined in
+[a single `Option<A>` type union](https://github.com/gcanti/fp-ts/blob/8674480341fd0cf2847091a8daa6276d8e41f41e/src/Option.ts#L131):
+
+```ts
+export type Option<A> = None | Some<A>;
+```
+
+The rules are simple. If some value `T` is nullable, it should be represented as
+`T`. Otherwise, if it is just the value `T`, we assume it is non-nullable.
+
+## Example
+
+Let's look at this example which prints a binary tree in order:
+
+```ts
+import { option } from "fp-ts";
+import { pipe } from "fp-ts/function";
+
+interface TreeNode<T> {
+  value: T;
+  left: option.Option<TreeNode<T>>;
+  right: option.Option<TreeNode<T>>;
+}
+
+function printTree(node: TreeNode<unknown>) {
+  pipe(node.left, option.map(printTree));
+  console.log(node.value);
+  pipe(node.right, option.map(printTree));
+}
+```
+
+You can clearly see which values the code expects to be nullable, and which are
+required. We need to _unwrap_ the value from the `left` and `right` fields. We
+cannot just use the value without checking if it is there. Let's compare that
+with the code that uses `undefined` to express nullability (with
+`strictNullChecks` still disabled):
+
+```ts
+interface TreeNode<T> {
+  value: T;
+  left: TreeNode<T> | undefined;
+  right: TreeNode<T> | undefined;
+}
+
+function printTree(node: TreeNode<unknown>) {
+  if (node.left) {
+    printTree(node.left);
+  }
+  console.log(node.value);
+  if (node.right) {
+    printTree(node.right);
+  }
+}
+```
+
+If we forgot that `left` and `right` are nullable and used them without checking
+if they are defined, we get a `TypeError` for trying to access `node.left` on an
+`undefined` `node`:
+
+```ts
+function printTree(node: TreeNode<unknown>) {
+  printTree(node.left); // will throw a TypeError
+  console.log(node.value);
+  printTree(node.right);
+}
+```
+
+## Caveat
+
+Using `Option` does not prevent passing `null` or `undefined` as any argument.
+The code will still compile without errors because `strictNullChecks` are
+disabled.
+
+```ts
+const treeNode: TreeNode<number> = {
+  value: 1234,
+  left: null, // should be option.none,
+  right: undefined, // should be option.none,
+};
+```
+
+The use of `Option` to express nullability is more of a hint to engineers. I
+still believe it easier to use the `Option` type to say which fields are
+nullable rather than have to learn it by heart, read through the code again if I
+want to find it out, or produce bugs by not paying attention to nullability.
+
+## Conclusion
+
+fp-ts exposes an `Option` type which represents nullable values in a type-safe
+way that hints to other engineers which values can be missing. We must first
+check if the value is inside an `Option` to get access to it, which makes it
+safe to use without having to remember whether a value is nullable. This is
+particularly useful in TypeScript projects without `strictNullChecks` enabled.
