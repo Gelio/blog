@@ -1,0 +1,208 @@
+---
+title: fp-ts with React hooks
+date: 2023-05-10
+tags: fp-ts, React
+slug: use-fp-ts-hooks
+summary:
+  Using fp-ts containers in React hook dependency arrays is tricky since their
+  references are not stable.
+---
+
+I love using [fp-ts](https://github.com/gcanti/fp-ts) for its expressiveness
+when using the [`Option`](https://gcanti.github.io/fp-ts/modules/Either.ts.html)
+and [`Either`](https://gcanti.github.io/fp-ts/modules/Either.ts.html)
+containers. I like the `Option` container in particular because it allows
+[expressing nullability in a type-safe way](./type-safe-nullability-without-strictNullChecks)
+in legacy TypeScript projects that have `strictNullChecks` disabled in their
+`tsconfig.json`.
+
+Working with these containers is usually pretty cheap. Determining whether an
+`Either` is `Left` or `Right` or whether an `Option` is `Some` or `None` is
+usually one `if` away (although you probably want to use other methods instead
+of unwrapping these containers right away).
+
+However, one difficult part is the lack of referential stability of these fp-ts
+container values. This is particularly problematic with React hooks that use a
+dependency array and strict equality to decide whether the dependencies changed.
+
+Consider the following component
+([TypeScript playground](https://www.typescriptlang.org/play?#code/JYWwDg9gTgLgBAbzhMNgQHZwL5wGZQQhwBEeYAtDAM4kDcAsAFCiSyJxjBgCmO+hYmUo0A9HgCuGAMZpM9Zq2jwASjwCGsgDQcJ1HgGUY6mDx16eAYUymAHjHP6Aonjw9tcaVA2nrGO-C4BESk3powCkzM0pjU8ACq+lAY6iBWNjz2cAC8nmG+GfYAPHFQwBgA5nAAPnAYEgA2DQB8ABT1TQCUjFFMkjJyWIk8UAAKhHjADTyjwLIS3q2diMxwnrHwIOoAngBGPMPJqXy5KIMAdMEgAHKNDeq7060WfgGthylpr5kwnd2r6wwcTgAG0wBMpjM5jAFgcoA0dPoYOMIJNprN5t54vCALo5OAWIwmHhFAFrM7oDDnADyqEpJRgZUqzQBbQpmHOGEwPH+vTWFhcblkrSWOWaKyYazWwDwcFa7KpwGo125rS2ewOSU+POWCDJUu8MOSPSlOGY+piQPgD2Ur0ITRG+IwPAA7nAAIK7W02e3TKBLE1StwwaQAC1aAANRBYoKIACQIdX7D7Hc4AN3UDQkPGwEZ0eslprg1GAFRSDQAXHAbbA7RAHVBziWy5mtPrsJ19WtzjBQzwMCLvNRltlxUPzgAraiYJadwumnt9gfPJIj8UFotSpEotFQzFwhorkbnLj7gD6CwavM3HZ6+sNCywotH1a9tZ99b95xrMADAOwOggkmmojNqOK8gCD7JJw3A8K0+oKk2RBwUeRxpFWpTlBUa5ypeGGMlhOHwfOUpFKAVTUFA0jZAgl64JmMA0RGCYxtquDgqikIwfuEa4KILIkX8bYkYh6hgGqOzJlqxydMJpqieJHG7hiRoHrJCF0hyFQ8DA1JQE4DT6CKOEdFeAK8tgzBAA)):
+
+```tsx
+import { option } from "fp-ts";
+import { pipe } from "fp-ts/function";
+import React, { useState, useContext, useEffect, createContext } from "react";
+
+const UsernameContext = createContext<string | null>(null);
+
+function UserProfilePicture() {
+  const maybeUsername = option.fromNullable(useContext(UsernameContext));
+  const [profilePictureUrl, setProfilePictureUrl] = useState<
+    option.Option<string>
+  >(option.none);
+
+  useEffect(() => {
+    if (option.isNone(maybeUsername)) {
+      return;
+    }
+
+    const abortController = new AbortController();
+    fetch(`/user/${maybeUsername.value}`, {
+      signal: abortController.signal,
+    })
+      .then((res) => res.json())
+      .then((user) => {
+        setProfilePictureUrl(user.picture_url);
+      });
+
+    return () => abortController.abort();
+  }, [maybeUsername]);
+
+  return pipe(
+    option.some((username: string) => (url: string) => (
+      <img src={url} alt={`${username} profile picture`} />
+    )),
+    option.ap(maybeUsername),
+    option.ap(profilePictureUrl),
+    option.getOrElse(() => null)
+  );
+}
+```
+
+It seems well, except for the fact that it will keep rerunning the effect and
+sending requests on each rerender. The culprit? `option.fromNullable` which
+creates a new `Some<A>` object each time it is called with a defined value.
+This, in turn, is fed into the `useEffect` dependency array, which makes it run
+the effect again, even if the inner value inside the `Option` is still the same.
+
+This is a risk stemming from creating new `Either`s and `Option`s on the fly.
+Their references are not stable. They will create new objects each time.
+
+## Workarounds
+
+Not all is lost. While we wait for
+[the auto-memoizing React compiler](https://www.youtube.com/watch?v=lGEMwh32soc),
+we can still use some workarounds for this problem.
+
+### Memoize the call to `option.fromNullable`
+
+If we change
+
+```ts
+const maybeUsername = option.fromNullable(useContext(UsernameContext));
+```
+
+to
+
+```ts
+const unsafeUsername = useContext(UsernameContext);
+const maybeUsername = useMemo(
+  () => option.fromNullable(unsafeUsername),
+  [unsafeUsername]
+);
+```
+
+then the `Option` itself will remain the same object in memory as long as the
+`unsafeUsername` remains the same.
+
+This works, but has a downside of leaking the `unsafeUsername` variable in the
+current scope.
+
+### Use specialized fp-ts React hooks
+
+[fp-ts-react-stable-hooks](https://github.com/mblink/fp-ts-react-stable-hooks)
+is a library exposing fp-ts-aware React hooks. One of them is `useStableEffect`
+for which we define an [`Eq`](https://gcanti.github.io/fp-ts/modules/Eq.ts.html)
+(equality rules) that will be used to compare the dependency arrays:
+
+```ts
+useStableEffect(
+  () => {
+    // The body of the effect is unchanged
+    // ...
+  },
+  [maybeUsername],
+  eq.tuple(option.getEq(eq.eqStrict))
+);
+```
+
+The constructed `Eq` will compare the `maybeUsername` from dependency arrays and
+determine if they meaningfully differ (one is `Some` and the other is `None`, or
+both are `Some` with different inner values).
+
+#### Automatically creating an fp-ts-aware `Eq`
+
+Looking at `fp-ts-react-stable-hooks` I had an idea. Hand-writing these `Eq`
+implementations is surely error-prone and cumbersome. There must be a way to
+automatically create an `Eq` implementation based on the dependency array. It
+would meaningfully compare `Option`s and `Either`s (compare their contents) and
+use strict equality comparisons for other values.
+
+I created
+[`optionEitherAwareEq`](https://github.com/Gelio/use-fp-ts-hooks/blob/127c834135d2a82c2d6e3b360ef63a657770c053/src/index.ts#L61)
+that does exactly that. While it seems to work well
+([the tests](https://github.com/Gelio/use-fp-ts-hooks/blob/127c834135d2a82c2d6e3b360ef63a657770c053/src/index.test.ts#L5)
+pass), it has some downsides:
+
+- it inspects the dependency array to decide which `Eq` to use for each item.
+  This could be costly, especially since this is done on each render.
+- it assumes the order of elements in the dependency array is always the same.
+
+I decided not to publish this library, since it could be harmful to the premise
+of memoization of these values. It is sound, meaning it will correctly
+meaningfully compare dependency arrays, but it may be slow. Use it at your own
+risk.
+
+## Rant: JavaScript lacks built-in meaningful equality checks
+
+In Rust, there is
+[an `Eq` trait](https://doc.rust-lang.org/std/cmp/trait.Eq.html) that is a core
+concept of the language. Each type can decide how it wants to be compared with
+other types (and itself) by implementing the `PartialEq` trait.
+
+```rust
+enum MyOption<T> {
+    Some(T),
+    None,
+}
+
+impl<T> PartialEq for MyOption<T>
+where
+    T: PartialEq,
+{
+    fn eq(&self, other: &Self) -> bool {
+        match (self, other) {
+            (MyOption::None, MyOption::None) => true,
+            (MyOption::Some(a), MyOption::Some(b)) => a == b,
+            _ => false,
+        }
+    }
+}
+
+impl<T: Eq> Eq for MyOption<T>{}
+
+fn main() {
+    let a = MyOption::Some(1234);
+    let b = MyOption::Some(1234);
+
+    println!("{:?}", a == b)
+}
+```
+
+[Rust playground](https://play.rust-lang.org/?version=stable&mode=debug&edition=2021&gist=bef1666b1b831547da8424d7ed16c260)
+
+There is no concept like `Eq` in JavaScript. Types like `Option` are simple
+objects which do not have a notion of equality associated with them. If a
+library (like React) receives an unknown value, the best it can do to compare it
+with some other value is to use `===` (strict equality) or
+[`Object.is`](https://developer.mozilla.org/en-US/docs/Web/JavaScript/Reference/Global_Objects/Object/is)
+(which it does).
+
+This is unfortunate. I do not see an easy way to solve this problem without a
+fundamental JavaScript rework to be more aware of types.
+
+## Conclusion
+
+Constructing fp-ts containers like `Option` and `Either` on the fly in the
+render cycle poses risks when these are used in dependency arrays. These values
+need to be stable so effects do not re-execute after each rerender.
