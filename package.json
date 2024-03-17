@@ -10,8 +10,8 @@
     "start": "next start",
     "lint": "next lint",
     "check-types": "tsc --noEmit",
-    "create-indexes": "esno ./content-processing/create-indexes.ts",
-    "create-rss-feed": "esno ./content-processing/create-rss-feed.ts",
+    "create-indexes": "tsx ./content-processing/create-indexes.ts",
+    "create-rss-feed": "tsx ./content-processing/create-rss-feed.ts",
     "copy-static-content": "rsync -avh --delete --exclude='**/*.mdx' content/articles/ public/static-content/",
     "fmt": "prettier --write --ignore-path .gitignore .",
     "fmt.check": "prettier --check --ignore-path .gitignore ."
@@ -46,11 +46,11 @@
     "concurrently": "^7.5.0",
     "eslint": "8.26.0",
     "eslint-config-next": "13.0.1",
-    "esno": "^0.16.3",
     "glob": "^8.0.3",
     "next-remote-watch": "^2.0.0",
     "prettier": "^2.7.1",
     "remark-frontmatter": "^4.0.1",
+    "tsx": "^4.7.1",
     "typescript": "4.8.4"
   }
 }
