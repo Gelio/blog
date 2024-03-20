@@ -26,10 +26,10 @@ export const AboutPage = () => {
 
           <StyledAboutParagraph>
             My name is Grzegorz Rozdzialik (pronounced “Rossgialik”), but I go
-            by <StyledAccent>Greg</StyledAccent>. I am a Senior Software
-            Engineer working at{" "}
-            <ParagraphLink href="https://www.splitgraph.com/">
-              Splitgraph
+            by <StyledAccent>Greg</StyledAccent>. I am a Staff Software Engineer
+            working at{" "}
+            <ParagraphLink href="https://www.enterprisedb.com/">
+              EDB
             </ParagraphLink>
             .
           </StyledAboutParagraph>
