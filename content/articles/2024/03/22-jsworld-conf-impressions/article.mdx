@@ -1,0 +1,227 @@
+---
+title: JSWorld Conference 2024 impressions
+date: 2024-03-22
+tags: JavaScript, conference
+slug: jsworld-conf-2024-impressions
+summary:
+  Here is how JSWorld Conference 2024 in Amsterdam looked like from my
+  perspective.
+---
+
+Thanks to [EDB](https://www.enterprisedb.com/) for sponsoring my trip to
+[the JSWorld Conference 2024](https://jsworldconference.com/). The conference
+took place in Amsterdam, Netherlands, between 2024-02-28 and 2024-03-01.
+
+## Initial confusion
+
+There were a couple confusing parts about the conference itself.
+
+First, it turned out, that the _JSWorld Conference_ was a composition of
+[the VueJS Amsterdam 2024 conference](https://vuejs.amsterdam/) (first 2 days),
+and the final day was the 2nd day of
+[the DevWorld Conference 2024](https://devworldconference.com/). I was confused,
+since it did not say on the JSWorld Conference website that it consists of parts
+of other conferences. When I arrived at the venue, I was unsure whether I am at
+the right place, since it did not say _JSWorld_ anywhere, but it said _VueJS_.
+Thankfully, my name was in the list of attendees, so I was able to get in.
+
+Additionally, before the conference started, I had to _activate my ticket_,
+which involved going through some checkout page and "purchasing" a free ticket
+there. Not sure why that was necessary, since I had already bought my ticket way
+in advance.
+
+## VueJS Amsterdam 2024 (Days 1-2)
+
+The first two days were dedicated to VueJS. I am not a VueJS developer and I
+have never built anything with it. I accepted it as an opportunity to compare
+React and VueJS, and also learn about the framework-agnostic parts that were
+mentioned during the conference.
+
+I enjoyed the fact that it was a single-track conference. It was held at the
+Theater Amsterdam, which featured a huge screen and a great sound system. The
+only difficult part was getting in and out of seats, since they were long rows.
+The organizers also waited for the long queue in front of the building to check
+in before starting the conference, which was nice of them. I didn't want to miss
+Evan You's keynote.
+
+Here are my takeaways from the conference talks:
+
+- In _PrimeVue | The Next-Gen UI Component Library_, Cagatay Civici talked about
+  their use of design tokens in the library, and specifically making the
+  distinction between primitive, semantic, and component tokens.
+
+  Examples, using CSS variables:
+
+  - primitive: `--red-500: #ef4444`
+  - semantic: `--color-danger: var(--red-500)`
+  - component: `--button-color: var(--color-danger)`
+
+  Each layer uses tokens from the previous layer. It seems like an elegant way
+  to compose those tokens.
+
+  Such a distinction of tokens is also mentioned in
+  [Figma help articles](https://help.figma.com/hc/en-us/articles/18490793776023-Update-1-Tokens-variables-and-styles#token-organization).
+
+- Through _Rendering Revealed_ by Adam Jahr, I found out that Nuxt is getting
+  [islands](https://nuxt.com/docs/api/components/nuxt-island) _of
+  non-interactivity_.
+
+  They seem similar to
+  [Astro Islands](https://docs.astro.build/en/concepts/islands/), but rather
+  than opting-in to interactivity, Nuxt islands opt-out of it.
+
+- Thanks to _Common Mistakes in Vue.js_ by Daniel Kelly, I learned that Nuxt has
+  a [`useState`](https://nuxt.com/docs/api/composables/use-state) composable.
+  Despite the name similarity, it works nowhere near the same as the React hook.
+
+  `useState` in Nuxt is a composable (basically a React hook, as far as I know)
+  that allows you to declare the state on the server, and then send it to the
+  client for later use.
+
+- In _Vue & Vite Devtools_, Guillaume Chau explained that
+  [Volar](https://volarjs.dev/) powers Vue language server ability to understand
+  embedded languages (e.g. providing JavaScript suggestions inside a `script`
+  tag in an HTML file, despite the fact that an HTML file is not a JavaScript
+  file).
+
+- In the same talk, Guillaume showcased how easy it was to new developer tooling
+  to Vue using Vue devtool kit.
+  [Looks like the devtool kit is still in progress](https://github.com/vuejs/devtools-next/issues/71),
+  but it was cool to see new dev tools tailored to a specific application.
+
+- In _Cost-Effective Testing with Storybook and Playwright in Vue Applications_,
+  Yauheni Prakopchyk recommended using Storybook for more than showcasing
+  components. Stories are also useful to run
+  [interaction tests](https://storybook.js.org/docs/writing-tests/interaction-testing)
+  (basically `@testing-library` that run in the browser instead of JSDOM) and
+  [visual tests](https://storybook.js.org/docs/writing-tests/visual-testing)
+  (finding visual changes in stories from one run to another).
+
+## DevWorld Conference 2024 (Day 3)
+
+The last day was also the last day of the DevWorld Conference. There were 5
+tracks (1 main stage, 4 duck stages) with a variety of topics. I could attend
+whichever talks I wanted and I was not confined to just JavaScript talks, which
+was nice.
+
+The venue (RAI Amsterdam) was huge. There were also a lot more people there than
+at the VueJS Conference.
+
+Unfortunately, this day felt way worse to the VueJS part:
+
+- To listen to the duck stage talks, you has to wear headphones. There were not
+  enough headphones for everyone, since there was not too much seat rotation
+  (most people just stayed at one stage). I usually stood in the background and
+  tried to pick up what the talk is about from the slides and the low volume of
+  audio played from the speakers of the audio technical crew.
+
+- Food and beverages were not free. I am mostly surprised by this part, since
+  the conference ticket was not cheap. At least there was free water.
+
+- I had to wait in line for around 40 minutes to receive my badge to get in.
+
+- They ran out of attendee swag-bags, so I didn't get one. I only got a beanie,
+  which is definitely better than nothing, but still a bit disappointing.
+
+Anyways, here are the interesting bits from these talks:
+
+- In _JavaScript Streaming - A Qwik glimpse into the future_ by Shai Reznik, I
+  found out that Qwik has a different approach to hydration - it uses
+  _resumability_. Instead of rerunning all the components again on the client to
+  attach event handlers, it looks at the server-rendered DOM and infers stuff
+  from it, effectively "resuming" where the server stopped. It implements
+  [the PRPL pattern](https://web.dev/articles/apply-instant-loading-with-prpl).
+
+- Through _Latest in Angular by Angular Team Member_ by _Minko Gechev_, I
+  learned that [Angular adopted signals](https://angular.io/guide/signals). That
+  is yet another framework (next to
+  [Preact](https://preactjs.com/guide/v10/signals/),
+  [Solid](https://www.solidjs.com/tutorial/introduction_signals),
+  [Qwik](https://qwik.dev/docs/components/state/#usesignal)) that uses this
+  state primitive.
+
+  I have not used Angular for a long time, but I bet signals are going to be
+  simpler to work with compared to [RxJS observables](https://rxjs.dev/).
+
+- In _Tauri 2.0_, Daniel Thompson-Yvetot talked more about
+  [Tauri](https://tauri.app/) - a Rust-based Electron alternative for building
+  standalone applications for Windows, Linux, macOS, iOS, and Android.
+
+  According to Daniel, The binaries it produces are way smaller than Electron,
+  since Tauri does not ship its own webview and uses the one provided by the
+  operating system. It also heavily tree-shakes code and unused features.
+
+  An interesting part was that Tauri has external security audits for major
+  releases.
+
+- In _SolidJS - SolidStart_, Ryan Carniato presented
+  [server actions in Solid Start](https://start.solidjs.com/core-concepts/actions).
+
+  They seem similar to React's server actions.
+
+  One cool feature is that the framework is smart about their response - if a
+  server action ends with a redirect, the HTTP response includes some resources
+  that are going to be needed on that destination page.
+
+- Ryan Dahl showcased [JSR](https://jsr.io/) (a new module registry).
+
+  Notable features of JSR:
+
+  - TypeScript support (you can upload TypeScript files there and it will take
+    care of the compilation - cool for getting started, but I can foresee some
+    hard-to-debug issues since the engineer is not controlling the `tsc`
+    compilation).
+  - Only ESM - a step forward in getting rid of CommonJS modules.
+  - Interoperability with npm (packages on JSR can use npm packages as
+    dependencies, and npm packages can import JSR packages).
+  - Generates documentation based on TypeScript types and JSDoc. The
+    documentation is available right there
+    [when browsing the registry](https://jsr.io/@oak/oak).
+
+  - Provides a score for packages and suggests best practices to maintainers.
+
+- In _All Things Astro_, Elian van Cutsem View presented 3 cool Astro features
+  that stood out to me:
+
+  - Easy-to-enable
+    [view transitions](https://docs.astro.build/en/guides/view-transitions/).
+
+    It uses a polyfill to enable view transitions in browsers that do not
+    support them yet (at the time of writing this post,
+    [Firefox and Safari do not support them](https://developer.mozilla.org/en-US/docs/Web/API/View_Transitions_API#browser_compatibility)).
+
+    One thing I didn't realize is that view transitions are are shown in
+    [the Animations tab in Chrome DevTools](https://developer.chrome.com/docs/devtools/css/animations),
+    which makes them easy to inspect and control their speed.
+
+  - [Page partials](https://astro.build/blog/astro-340/), which render just some
+    parts of the page's HTML. This works great with [htmx](https://htmx.org/),
+    which relies on the server returning just the parts of the DOM that should
+    be updated/inserted.
+
+  - [Astro Studio](https://docs.astro.build/en/recipes/studio/), which makes it
+    easy to spin up a new SQL database for an Astro project. It has built-in
+    migrations, and a type-safe ORM.
+
+## Amsterdam as a city
+
+This was my first time visiting Amsterdam. I was surprised by how many bikes are
+there, and the fact that they dominate the streets. It was nothing like I have
+experienced before in capitals, where all parts of the city are full of cars.
+
+I didn't have any trouble getting around the city, or from the airport to the
+hotel. The public transport was great, and the city is very walkable. Everyone I
+talked to knew English, so I didn't have any trouble communicating.
+
+The city is also very clean, and the architecture is beautiful. I enjoyed
+walking around the canals and seeing the old buildings, most of them no taller
+than 5 floors.
+
+Exploring Amsterdam was an amazing addition to the conference experience.
+
+## Conclusion
+
+The conference was a great experience. I learned a lot about VueJS and other
+tools in the frontend ecosystem. It was also interesting to meet the famous
+people that stand behind these great tools and frameworks, and that I only knew
+from their GitHub contributions and blog articles.
