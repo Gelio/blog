@@ -1,0 +1,191 @@
+---
+title: Git revert after code moved to another file
+date: 2025-05-09
+tags: git
+slug: git-revert-after-code-moved-to-another-file
+summary: How to do `git revert` after the code has been moved to another file
+---
+
+## TL;DR
+
+1. `git show -R <commit> > revert.patch` to generate a reverse patch
+2. `patch <file> revert.patch` to apply the patch to the correct file (the one
+   where the code was moved to)
+
+## Reverting a commit
+
+`git revert` undoes changes done in some earlier commit. It assumes the files
+are still in the same place, and the code has not been moved around.
+
+```sh
+$ git commit -m "feat: risky feature"
+[main e86576e] feat: risky feature
+ 1 file changed, 1 insertion(+), 1 deletion(-)
+
+$ git revert HEAD --no-edit
+[main b0eb58b] Revert "feat: risky feature"
+ Date: Fri May 9 21:26:20 2025 +0200
+ 1 file changed, 1 insertion(+), 1 deletion(-)
+
+$ git log -n 1
+commit b0eb58b496ac695bc33a1f03d4363da56692ed28
+Author: Grzegorz Rozdzialik <voreny.gelio@gmail.com>
+Date:   Fri May 9 21:26:20 2025 +0200
+
+    Revert "feat: risky feature"
+
+    This reverts commit e86576e2db771f7f4898be48590f98b841babee9.
+```
+
+What if you want to revert an earlier commit, and the code has been moved to
+another file in the meantime?
+
+## Reverting after a file was renamed
+
+If the entire file was moved, then git will most likely be smart enough to
+notice that was a file rename/move (notice the `rename` in the `git commit`
+output below), and it will `git revert` will work just fine.
+
+```sh
+$ git commit -m "chore: move journal"
+[main 6dbc8f9] chore: move journal
+ 1 file changed, 0 insertions(+), 0 deletions(-)
+ rename journal.txt => journal-2.tx (100%)
+
+$ git revert HEAD~ --no-edit
+[main e30fd93] Revert "feat: risky feature"
+ 1 file changed, 1 insertion(+), 1 deletion(-)
+```
+
+## Dealing with moved code
+
+Problems happen when only part of the code was moved, e.g. when a file was
+sliced and some code was extracted. Then, git will not know what to do, and
+`git revert` will refuse to work.
+
+```sh
+$ git revert HEAD~
+Auto-merging Header.tsx
+CONFLICT (content): Merge conflict in Header.tsx
+error: could not revert 8409ca0... refactor: change styles
+hint: After resolving the conflicts, mark them with
+hint: "git add/rm <pathspec>", then run
+hint: "git revert --continue".
+hint: You can instead skip this commit with "git revert --skip".
+hint: To abort and get back to the state before "git revert",
+hint: run "git revert --abort".
+
+$ git diff
+diff --cc Header.tsx
+index e6629be,52520cd..0000000
+--- a/Header.tsx
++++ b/Header.tsx
+@@@ -98,6 -97,16 +98,30 @@@ const GitHubIcon = () =>
+    );
+  };
+
+++<<<<<<< HEAD
+++||||||| 8409ca0 (refactor: change styles)
+++const StyledIconLink = styled("a")(({ theme }) => ({
+++  textDecoration: "none",
+++  transition: "filter ease-in-out 200ms",
+++  "--shadowRadius": "5px",
+++  filter: `drop-shadow(0 0 var(--shadowRadius) ${theme.color.shadow()})`,
+++  ":hover": {
+++    "--shadowRadius": "10px",
+++  },
+++}));
+++
+++=======
++ const StyledIconLink = styled("a")(({ theme }) => ({
++   textDecoration: "none",
++   transition: "filter ease-in-out 200ms",
++   "--shadowRadius": "1px",
++   filter: `drop-shadow(0 0 var(--shadowRadius) ${theme.color.shadow()})`,
++   ":hover": {
++     "--shadowRadius": "2px",
++   },
++ }));
++
+++>>>>>>> parent of 8409ca0 (refactor: change styles)
+  const RSSIcon = () => {
+    const theme = useTheme();
+    const size = theme.spacing(3);
+```
+
+The output is pretty unhelpful. It tries to revert the change, but the code is
+no longer there.
+
+I know that I moved the code to `StyledIconLink.tsx`. I would love to tell
+`git revert` to try to apply that revert patch not to `Header.tsx`, but to
+`StyledIconLink.tsx`. The way to do that is to:
+
+1. Generate a reverse patch (e.g. using `git show -R`)
+2. Apply that patch manually to the correct file using `patch`
+
+```sh
+$ git show -R HEAD~ > revert.patch
+$ patch StyledIconLink.tsx revert.patch
+patching file StyledIconLink.tsx
+No such line 37 in input file, ignoring
+1 out of 2 hunks failed--saving rejects to StyledIconLink.tsx.rej
+```
+
+The `patch` command:
+
+- reverted as much of `StyledIconLink.tsx` as it could
+
+  ```sh
+  $ git diff
+  diff --git a/StyledIconLink.tsx b/StyledIconLink.tsx
+  index d95a425..f8e0e1d 100644
+  --- a/StyledIconLink.tsx
+  +++ b/StyledIconLink.tsx
+  @@ -1,9 +1,9 @@
+   export const StyledIconLink = styled("a")(({ theme }) => ({
+     textDecoration: "none",
+     transition: "filter ease-in-out 200ms",
+  -  "--shadowRadius": "5px",
+  +  "--shadowRadius": "1px",
+     filter: `drop-shadow(0 0 var(--shadowRadius) ${theme.color.shadow()})`,
+     ":hover": {
+  -    "--shadowRadius": "10px",
+  +    "--shadowRadius": "2px",
+     },
+   }));
+  ```
+
+- said that it could not revert everything, and reported that in
+  `StyledIconLink.tsx.rej` - makes sense, because that commit changed code
+  outside of `StyledIconLink.tsx` as well. This shows which other code I need to
+  revert manually.
+
+  ```sh
+  $ cat StyledIconLink.tsx.rej
+  @@ -38,7 +38,7 @@
+  href={githubProfileLink}
+  target="_blank"
+      rel="noopener"
+      -          aria-label="GitHub profile"
+      +          aria-label="My GitHub profile"
+      >
+      <GitHubIcon />
+      </StyledIconLink>
+  ```
+
+- created a `StyledIconLink.tsx.orig` file with the original contents of the
+  file (pre-patch). This is most likely pointless, because you are already using
+  git, so you can easily go back to the original content of
+  `StyledIconLink.tsx`.
+
+## Switcheroo: generate a normal patch, and patch in reverse
+
+Instead of tucking the `-R` flag to the `git show` command, you can also add it
+to the `patch` command:
+
+```sh
+git show HEAD~ > normal.patch
+patch -R StyledIconLink.tsx normal.patch
+```
+
+This has the same effect. Choose whichever you prefer.
