@@ -12,13 +12,13 @@ import {
 import { Layout } from "../../components/Layout";
 import {
   readSlugReverseMapping,
-  ReadSlugReverseMappingError,
+  type ReadSlugReverseMappingError,
 } from "../../content-processing/indexes";
 import {
-  FileReadError,
+  type FileReadError,
   safeReadFile,
 } from "../../content-processing/indexes/utils";
-import { MDXRemote, MDXRemoteSerializeResult } from "next-mdx-remote";
+import { MDXRemote, type MDXRemoteSerializeResult } from "next-mdx-remote";
 import {
   DevOnlyErrorDetails,
   ErrorAlert,
@@ -94,8 +94,8 @@ const ArticlePage = ({ sourceWithMetadataResult }: ArticlePageProps) => {
                   </MDXProvider>
                 </StyledArticleSection>
               </>
-            )
-          )
+            ),
+          ),
         )}
       </StyledArticleContainer>
     </Layout>
@@ -124,7 +124,7 @@ export const getStaticProps: GetStaticProps<
 > = async (context) => {
   if (!context.params) {
     throw new Error(
-      "context.params is undefined even though getStaticPaths exists"
+      "context.params is undefined even though getStaticPaths exists",
     );
   }
   const { slug } = context.params;
@@ -151,7 +151,7 @@ export const getStaticProps: GetStaticProps<
             ({
               type: "article-read-error",
               error,
-            } as const)
+            }) as const,
         ),
         taskEither.chainTaskK(
           (source) => () =>
@@ -167,15 +167,15 @@ export const getStaticProps: GetStaticProps<
                   ],
                 ],
               },
-            })
+            }),
         ),
         taskEither.map((mdxSource) => {
           // NOTE: delete frontmatter since it cannot be serialized by Next in SSR.
           // Frontmatter is already available via `articleMetadata`
           delete mdxSource["frontmatter"];
           return mdxSource;
-        })
-      )
+        }),
+      ),
     ),
     taskEither.bindW(
       "rawArticleSummary",
@@ -183,7 +183,7 @@ export const getStaticProps: GetStaticProps<
         articleWithMetadata: {
           metadata: { summary },
         },
-      }) => stripMarkdownFromString(summary)
+      }) => stripMarkdownFromString(summary),
     ),
     taskEither.map(
       ({
@@ -194,8 +194,8 @@ export const getStaticProps: GetStaticProps<
         articleMetadata: metadata,
         mdxSource,
         rawArticleSummary,
-      })
-    )
+      }),
+    ),
   )();
 
   if (either.isLeft(sourceWithMetadataResult)) {
@@ -235,16 +235,16 @@ const stripMarkdownFromString =
         .use(stripMarkdown)
         .process(value)
         .then((strippedMarkdown) =>
-          resolve(either.right(strippedMarkdown.toString()))
+          resolve(either.right(strippedMarkdown.toString())),
         )
         .catch((error) =>
           resolve(
             either.left<StripMarkdownError>({
               type: "strip-markdown-error",
               error,
-            })
-          )
-        )
+            }),
+          ),
+        ),
     );
 
 export const config: PageConfig = {

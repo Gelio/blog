@@ -5,7 +5,7 @@
     "allowJs": true,
     "skipLibCheck": true,
     "strict": true,
-    "importsNotUsedAsValues": "error",
+    "verbatimModuleSyntax": true,
     "forceConsistentCasingInFileNames": true,
     "noUnusedLocals": true,
     "noUnusedParameters": true,

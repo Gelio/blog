@@ -7,7 +7,7 @@ import { indexedArticleMetadataSchema } from "./schema";
 import {
   ensureParentDirectoryExists,
   getIndexFilePath,
-  IndexReadError,
+  type IndexReadError,
   safeReadIndex,
   safeWriteIndex,
 } from "./utils";
@@ -23,7 +23,7 @@ interface DuplicateSlugError {
 }
 
 export const createSlugReverseMappingIndex = (
-  articlesWithMetadata: readonly ParsedArticleWithMetadata[]
+  articlesWithMetadata: readonly ParsedArticleWithMetadata[],
 ) =>
   pipe(
     taskEither.rightIO(getIndexFilePath(slugReverseMappingIndexName)),
@@ -36,9 +36,9 @@ export const createSlugReverseMappingIndex = (
             ({
               type: "cannot-create-index-parent-directory",
               error,
-            } as const)
-        )
-      )
+            }) as const,
+        ),
+      ),
     ),
     taskEither.apSW(
       "slugReverseMapping",
@@ -75,7 +75,7 @@ export const createSlugReverseMappingIndex = (
                   filePaths: articlesForSlug.map(({ filePath }) => filePath),
                 });
               }
-            }
+            },
           );
 
           if (duplicateErrors.length > 0) {
@@ -83,8 +83,8 @@ export const createSlugReverseMappingIndex = (
           }
 
           return either.right(slugReverseMapping);
-        })()
-      )
+        })(),
+      ),
     ),
     taskEither.chainW(({ slugReverseMappingIndexPath, slugReverseMapping }) =>
       pipe(
@@ -95,10 +95,10 @@ export const createSlugReverseMappingIndex = (
               type: "cannot-write-slug-reverse-mapping",
               slugReverseMappingIndexPath,
               error,
-            } as const)
-        )
-      )
-    )
+            }) as const,
+        ),
+      ),
+    ),
   );
 
 const indexedArticleWithMetadataSchema = z.object({
@@ -108,7 +108,7 @@ const indexedArticleWithMetadataSchema = z.object({
 
 const slugReverseMappingSchema = z.record(
   z.string(),
-  indexedArticleWithMetadataSchema
+  indexedArticleWithMetadataSchema,
 );
 
 export type ReadSlugReverseMappingError =
@@ -129,8 +129,8 @@ export const readSlugReverseMapping = pipe(
           ({
             type: "slug-reverse-mapping-parse-error",
             error,
-          } as const)
-      )
-    )
-  )
+          }) as const,
+      ),
+    ),
+  ),
 );

@@ -1,5 +1,5 @@
 import styled from "@emotion/styled";
-import { ReactNode, useEffect } from "react";
+import { type ReactNode, useEffect } from "react";
 import {
   responsiveContainer,
   responsiveContainerInlinePadding,
@@ -17,7 +17,7 @@ export const ErrorAlertContainer = styled("div")(
     border: `solid 1px ${theme.color.error.border}`,
     padding: theme.spacing(2),
     borderRadius: theme.spacing(1),
-  })
+  }),
 );
 
 export const DevOnlyErrorDetails = ({ error }: { error: unknown }) => {

@@ -2,7 +2,7 @@ import styled from "@emotion/styled";
 import { MDXProvider } from "@mdx-js/react";
 import { task } from "fp-ts";
 import { pipe } from "fp-ts/function";
-import { MDXRemote, MDXRemoteSerializeResult } from "next-mdx-remote";
+import { MDXRemote, type MDXRemoteSerializeResult } from "next-mdx-remote";
 import { serialize } from "next-mdx-remote/serialize";
 import type { IndexedArticleMetadata } from "../../content-processing/indexes/schema";
 import { baseMDXComponents } from "../mdx";
@@ -45,12 +45,12 @@ const StyledArticleCardSummary = styled(Paragraph)({
 });
 
 export const serializeSummaryInIndexedArticles = (
-  articles: IndexedArticleMetadata[]
+  articles: IndexedArticleMetadata[],
 ) =>
   pipe(
     articles.map((articleMetadata) => async () => ({
       ...articleMetadata,
       summary: await serialize(articleMetadata.summary),
     })),
-    task.sequenceArray
+    task.sequenceArray,
   );

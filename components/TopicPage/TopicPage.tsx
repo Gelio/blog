@@ -9,7 +9,7 @@ import {
 } from "../../styles/layout";
 import { headingStyle } from "../../styles/typography";
 import {
-  IndexedArticleMetadataWithSerializedSummary,
+  type IndexedArticleMetadataWithSerializedSummary,
   IndexedArticleCard,
 } from "../ArticleCard";
 import { Button } from "../Button";
@@ -47,8 +47,8 @@ export const TopicPage = ({ topicName, articlesResult }: TopicPageProps) => {
             either.match(
               // NOTE: error is shown below
               () => null,
-              ({ description }) => description
-            )
+              ({ description }) => description,
+            ),
           )}
         </Paragraph>
       </StyledMainContent>
@@ -91,8 +91,8 @@ export const TopicPage = ({ topicName, articlesResult }: TopicPageProps) => {
                 </StyledPaginationContainer>
               )}
             </>
-          )
-        )
+          ),
+        ),
       )}
     </Layout>
   );
@@ -101,7 +101,7 @@ export const TopicPage = ({ topicName, articlesResult }: TopicPageProps) => {
 const StyledMainContent = styled("main")(
   responsiveContainer,
   responsiveContainerInlinePadding,
-  pageContentMarginTop
+  pageContentMarginTop,
 );
 
 const StyledPageTitle = styled("h1")(headingStyle, ({ theme }) => ({
@@ -116,7 +116,7 @@ const StyledArticleCardsContainer = styled("div")(
     display: "flex",
     flexDirection: "column",
     gap: theme.spacing(2),
-  })
+  }),
 );
 
 const maxButtonsGap = "200px";
@@ -131,7 +131,7 @@ const StyledPaginationContainer = styled("div")(
     // Using `column-gap` is not possible, because it does not allow using
     // `minmax`
     gridTemplateColumns: `1fr minmax(min-content, ${maxButtonsGap}) 1fr`,
-  })
+  }),
 );
 
 const NavigationButton = styled(Button)({
