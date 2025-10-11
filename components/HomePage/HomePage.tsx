@@ -10,7 +10,7 @@ import {
   responsiveContainerInlinePadding,
 } from "../../styles/layout";
 import {
-  IndexedArticleMetadataWithSerializedSummary,
+  type IndexedArticleMetadataWithSerializedSummary,
   IndexedArticleCard,
 } from "../ArticleCard";
 import {
@@ -56,8 +56,8 @@ export const HomePage = ({ allArticlesResult }: HomePageProps) => {
               ))}
               {/* TODO: add pagination */}
             </StyledArticleCardsContainer>
-          )
-        )
+          ),
+        ),
       )}
     </Layout>
   );
@@ -66,7 +66,7 @@ export const HomePage = ({ allArticlesResult }: HomePageProps) => {
 const StyledMainContent = styled("main")(
   responsiveContainer,
   responsiveContainerInlinePadding,
-  pageContentMarginTop
+  pageContentMarginTop,
 );
 
 const StyledArticleCardsContainer = styled("div")(
@@ -77,5 +77,5 @@ const StyledArticleCardsContainer = styled("div")(
     flexDirection: "column",
     gap: theme.spacing(2),
     marginBlockStart: theme.spacing(2),
-  })
+  }),
 );

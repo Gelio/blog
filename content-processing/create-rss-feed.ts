@@ -1,7 +1,10 @@
 import { apply, array, option, taskEither } from "fp-ts";
 import { pipe } from "fp-ts/function";
 import path from "path";
-import { readAllArticlesIndex, ReadAllArticlesIndexError } from "./indexes";
+import {
+  readAllArticlesIndex,
+  type ReadAllArticlesIndexError,
+} from "./indexes";
 import { safeWriteFile } from "./indexes/utils";
 import { getSiteURL } from "./utils";
 
@@ -15,7 +18,7 @@ const createRSSFeed = pipe(
       // infers incompatible error type
       URL,
       ReadAllArticlesIndexError
-    >(getSiteURL)
+    >(getSiteURL),
   ),
   taskEither.map(([allArticles, siteURL]) => {
     const rssItems = allArticles.map((article) =>
@@ -25,12 +28,12 @@ const createRSSFeed = pipe(
         // TODO: possibly strip out Markdown
         description: article.summary,
         url: `${siteURL}article/${article.slug}`,
-      })
+      }),
     );
 
     const latestArticleDate = pipe(
       array.head(allArticles),
-      option.map((article) => new Date(article.date))
+      option.map((article) => new Date(article.date)),
     );
 
     const rssChannel = getRSSChannel({
@@ -47,8 +50,8 @@ ${rssChannel}
   taskEither.bindTo("rssFeedContent"),
   taskEither.apS("rssFeedFilePath", taskEither.fromIO(rssFeedFilePath)),
   taskEither.chainFirstW(({ rssFeedFilePath, rssFeedContent }) =>
-    safeWriteFile(rssFeedFilePath, rssFeedContent)
-  )
+    safeWriteFile(rssFeedFilePath, rssFeedContent),
+  ),
 );
 
 pipe(
@@ -59,8 +62,8 @@ pipe(
       console.log(error);
     },
     ({ rssFeedFilePath }) =>
-      console.log("RSS feed created successfully at ", rssFeedFilePath)
-  )
+      console.log("RSS feed created successfully at ", rssFeedFilePath),
+  ),
 )();
 
 /**
@@ -90,8 +93,8 @@ ${pipe(
   option.match(
     () => "",
     (latestArticleDate) =>
-      `<pubDate>${latestArticleDate.toUTCString()}</pubDate>`
-  )
+      `<pubDate>${latestArticleDate.toUTCString()}</pubDate>`,
+  ),
 )}
 
 ${items.join("\n")}

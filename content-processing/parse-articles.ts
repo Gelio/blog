@@ -1,4 +1,4 @@
-import glob from "glob";
+import { glob } from "glob";
 import { readFile } from "fs/promises";
 import grayMatter from "gray-matter";
 import { date, either, ord, readonlyArray, task, taskEither } from "fp-ts";
@@ -16,27 +16,20 @@ const getArticleFilePaths = pipe(
   taskEither.Do,
   taskEither.apS(
     "repositoryDirectoryPath",
-    taskEither.rightIO(getRepositoryRootDirectoryPath)
+    taskEither.rightIO(getRepositoryRootDirectoryPath),
   ),
-  taskEither.bindW(
-    "articlePaths",
-    ({ repositoryDirectoryPath }) =>
+  taskEither.bindW("articlePaths", ({ repositoryDirectoryPath }) =>
+    taskEither.tryCatch(
       () =>
-        new Promise<either.Either<Error, string[]>>((resolve) => {
-          glob(
-            articlesGlob,
-            { cwd: repositoryDirectoryPath, absolute: true },
-            (error, matches) => {
-              resolve(error ? either.left(error) : either.right(matches));
-            }
-          );
-        })
+        glob(articlesGlob, { cwd: repositoryDirectoryPath, absolute: true }),
+      either.toError,
+    ),
   ),
   taskEither.map(({ articlePaths, repositoryDirectoryPath }) =>
     articlePaths.map((filePath) =>
-      path.relative(repositoryDirectoryPath, filePath)
-    )
-  )
+      path.relative(repositoryDirectoryPath, filePath),
+    ),
+  ),
 );
 
 /**
@@ -55,7 +48,7 @@ export const parseArticleWithMetadata = pipe(
       ({
         type: "cannot-complete-glob",
         error,
-      } as const)
+      }) as const,
   ),
   taskEither.chainW((articleFilePaths) =>
     pipe(
@@ -67,37 +60,37 @@ export const parseArticleWithMetadata = pipe(
             (articleMetadata): ParsedArticleWithMetadata => ({
               metadata: articleMetadata,
               filePath: articleFilePath,
-            })
+            }),
           ),
-          taskEither.mapLeft((error) => [error])
-        )
+          taskEither.mapLeft((error) => [error]),
+        ),
       ),
       readonlyArray.sequence(
         taskEither.getApplicativeTaskValidation(
           task.ApplyPar,
-          readonlyArray.getSemigroup<ArticleMetadataParseError>()
-        )
+          readonlyArray.getSemigroup<ArticleMetadataParseError>(),
+        ),
       ),
       taskEither.mapLeft(
         (errors) =>
           ({
             type: "cannot-parse-article",
             errors,
-          } as const)
-      )
-    )
+          }) as const,
+      ),
+    ),
   ),
   taskEither.map(
     readonlyArray.sort(
       pipe(
         date.Ord,
         ord.contramap(
-          ({ metadata }: ParsedArticleWithMetadata) => metadata.date
+          ({ metadata }: ParsedArticleWithMetadata) => metadata.date,
         ),
-        ord.reverse
-      )
-    )
-  )
+        ord.reverse,
+      ),
+    ),
+  ),
 );
 
 type ArticleMetadataParseError =
@@ -108,7 +101,7 @@ type ArticleMetadataParseError =
   | {
       type: "cannot-parse-frontmatter";
       readFrontMatter: Record<string, unknown>;
-      error: z.ZodError<z.input<typeof articleFrontMatterSchema>>;
+      error: z.ZodError<z.output<typeof articleFrontMatterSchema>>;
     };
 
 const articleFrontMatterSchema = z.object({
@@ -124,13 +117,13 @@ const articleFrontMatterSchema = z.object({
 
       if (trimmedTag.length === 0) {
         context.addIssue({
-          code: z.ZodIssueCode.custom,
+          code: "custom",
           message: `Empty tag with index ${index}`,
         });
       }
 
       return trimmedTag;
-    })
+    }),
   ),
 
   slug: z.string().min(1),
@@ -147,7 +140,7 @@ type ParsedArticleMetadata = ParsedArticleFrontMatter & {
 };
 
 const parseArticleMetadata = (
-  articleFilePath: string
+  articleFilePath: string,
 ): taskEither.TaskEither<ArticleMetadataParseError, ParsedArticleMetadata> =>
   pipe(
     taskEither.tryCatch(
@@ -155,7 +148,7 @@ const parseArticleMetadata = (
       (error): ArticleMetadataParseError => ({
         type: "cannot-read-file",
         error: error as Error,
-      })
+      }),
     ),
     taskEither.chainEitherK((articleContents) => {
       const { data, content } = grayMatter(articleContents);
@@ -175,8 +168,8 @@ const parseArticleMetadata = (
               // default 200 words per minute.
               wordsPerMinute: 150,
             }).minutes,
-          })
-        )
+          }),
+        ),
       );
-    })
+    }),
   );

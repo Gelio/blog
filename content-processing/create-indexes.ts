@@ -1,7 +1,7 @@
 import { either, task, taskEither } from "fp-ts";
 import { pipe } from "fp-ts/function";
 import path from "path";
-import rimraf from "rimraf";
+import { rimraf } from "rimraf";
 import {
   createAllArticlesIndex,
   createSlugReverseMappingIndex,
@@ -12,17 +12,13 @@ import { parseArticleWithMetadata } from "./parse-articles";
 
 const clearIndexesDirectory: taskEither.TaskEither<Error, undefined> = pipe(
   taskEither.rightIO(getIndexesDirectoryPath),
-  taskEither.chain(
-    (indexesDirectoryPath): taskEither.TaskEither<Error, undefined> =>
-      () =>
-        new Promise((resolve) =>
-          rimraf(path.join(indexesDirectoryPath, "*"), {}, (error) =>
-            error
-              ? resolve(either.left(error))
-              : resolve(either.right(undefined))
-          )
-        )
-  )
+  taskEither.chain((indexesDirectoryPath) =>
+    taskEither.tryCatch(
+      () => rimraf(path.join(indexesDirectoryPath, "*")),
+      either.toError,
+    ),
+  ),
+  taskEither.map(() => undefined),
 );
 
 const main = pipe(
@@ -35,9 +31,9 @@ const main = pipe(
           ({
             type: "cannot-clear-indexes-directory",
             error,
-          } as const)
-      )
-    )
+          }) as const,
+      ),
+    ),
   ),
   taskEither.chainW((articlesWithMetadata) =>
     pipe(
@@ -45,8 +41,8 @@ const main = pipe(
       // process' errors are returned
       createAllArticlesIndex(articlesWithMetadata),
       taskEither.apFirstW(createTopicIndexes(articlesWithMetadata)),
-      taskEither.apFirstW(createSlugReverseMappingIndex(articlesWithMetadata))
-    )
+      taskEither.apFirstW(createSlugReverseMappingIndex(articlesWithMetadata)),
+    ),
   ),
   taskEither.matchE(
     (error) =>
@@ -57,8 +53,8 @@ const main = pipe(
     () =>
       task.fromIO(() => {
         console.log("All done!");
-      })
-  )
+      }),
+  ),
 );
 
 main();

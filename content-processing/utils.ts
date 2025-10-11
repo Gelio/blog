@@ -1,6 +1,6 @@
 import { either, ioOption, option } from "fp-ts";
 import { pipe } from "fp-ts/function";
-import type { z, ZodTypeDef } from "zod";
+import type { z } from "zod";
 
 // NOTE: the suggestion from the zod README to use z.ZodType or
 // z.ZodTypeAny leads to this function returning `any`
@@ -8,12 +8,10 @@ import type { z, ZodTypeDef } from "zod";
 // We need to manually specify ZodType's generic arguments for
 // `safeParse` to retain the types
 export const safeParseSchema =
-  <Output, Def extends ZodTypeDef, Input>(
-    schema: z.ZodType<Output, Def, Input>
-  ) =>
+  <Output, Input>(schema: z.ZodType<Output, Input>) =>
   (data: unknown) =>
     pipe(schema.safeParse(data), (result) =>
-      result.success ? either.right(result.data) : either.left(result.error)
+      result.success ? either.right(result.data) : either.left(result.error),
     );
 
 const getEnvironmentVariable =
@@ -32,10 +30,10 @@ const getVercelSiteURL = pipe(
         return getEnvironmentVariable("VERCEL_URL");
     }
   }),
-  ioOption.map((host) => new URL(`https://${host}`))
+  ioOption.map((host) => new URL(`https://${host}`)),
 );
 
 export const getSiteURL = pipe(
   getVercelSiteURL,
-  ioOption.getOrElse(() => () => new URL(`http://localhost:3000/`))
+  ioOption.getOrElse(() => () => new URL(`http://localhost:3000/`)),
 );
