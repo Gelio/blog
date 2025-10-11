@@ -21,27 +21,27 @@ export const getRepositoryRootDirectoryPath: io.IO<string> = () =>
 export const getIndexesDirectoryPath = pipe(
   getRepositoryRootDirectoryPath,
   io.map((repositoryRootDirectoryPath) =>
-    path.join(repositoryRootDirectoryPath, "content-indexes")
-  )
+    path.join(repositoryRootDirectoryPath, "content-indexes"),
+  ),
 );
 
 export const getIndexFilePath = (indexFileName: string): io.IO<string> =>
   pipe(
     getIndexesDirectoryPath,
     io.map((indexesDirectoryPath) =>
-      path.join(indexesDirectoryPath, indexFileName)
-    )
+      path.join(indexesDirectoryPath, indexFileName),
+    ),
   );
 
 export const ensureParentDirectoryExists = (
-  filePath: string
+  filePath: string,
 ): taskEither.TaskEither<unknown, undefined> =>
   pipe(
     taskEither.tryCatch(
       () => fs.mkdir(path.dirname(filePath), { recursive: true }),
-      (error) => error
+      (error) => error,
     ),
-    taskEither.map(() => undefined)
+    taskEither.map(() => undefined),
   );
 
 export interface FileWriteError {
@@ -51,7 +51,7 @@ export interface FileWriteError {
 
 export const safeWriteFile = (
   filePath: string,
-  data: string
+  data: string,
 ): taskEither.TaskEither<FileWriteError, void> =>
   taskEither.tryCatch(
     () =>
@@ -61,7 +61,7 @@ export const safeWriteFile = (
     (error) => ({
       type: "file-write-error",
       error,
-    })
+    }),
   );
 
 export const safeWriteIndex = (filePath: string, data: unknown) =>
@@ -74,7 +74,7 @@ export interface FileReadError {
 }
 
 export const safeReadFile = (
-  filePath: string
+  filePath: string,
 ): taskEither.TaskEither<FileReadError, string> =>
   taskEither.tryCatch(
     () => fs.readFile(filePath, { encoding: "utf-8" }),
@@ -82,7 +82,7 @@ export const safeReadFile = (
       type: "file-read-error",
       error,
       filePath,
-    })
+    }),
   );
 
 interface IndexParseError {
@@ -96,7 +96,7 @@ const safeParseJSON = (data: string): either.Either<IndexParseError, unknown> =>
     (error): IndexParseError => ({
       type: "json-parse-error",
       error,
-    })
+    }),
   );
 
 export interface IndexReadError {
@@ -114,6 +114,6 @@ export const safeReadIndex = (filePath: string) =>
         type: "index-read-error",
         filePath,
         error,
-      })
-    )
+      }),
+    ),
   );

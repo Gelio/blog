@@ -54,8 +54,8 @@ export const TopicsPage = ({ topicsResult }: TopicsPageProps) => {
                 </TopicLink>
               ))}
             </TopicsContainer>
-          )
-        )
+          ),
+        ),
       )}
     </Layout>
   );
@@ -64,7 +64,7 @@ export const TopicsPage = ({ topicsResult }: TopicsPageProps) => {
 const StyledMainContent = styled("div")(
   responsiveContainer,
   responsiveContainerInlinePadding,
-  pageContentMarginTop
+  pageContentMarginTop,
 );
 
 const StyledMainHeading = styled("h1")(headingStyle);
@@ -78,7 +78,7 @@ const TopicsContainer = styled("main")(
     flexWrap: "wrap",
     columnGap: theme.spacing(3),
     rowGap: theme.spacing(2),
-  })
+  }),
 );
 
 const TopicLink = styled(Link)(decorationOnHoverLinkStyle, ({ theme }) => ({

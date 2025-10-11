@@ -42,7 +42,7 @@ const formatDateString = (dateString: string) => {
   const date = new Date(dateString);
 
   return `${date.getFullYear()}-${padDateElement(
-    date.getMonth() + 1
+    date.getMonth() + 1,
   )}-${padDateElement(date.getDate())}`;
 };
 

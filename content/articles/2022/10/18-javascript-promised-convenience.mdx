@@ -92,7 +92,7 @@ just `Promise<Response>`.
 
 ```typescript
 const responsePromise: Promise<Response> = getDelayedRandomInteger().then(
-  (id) => fetch(`https://swapi.dev/api/people/${id}`)
+  (id) => fetch(`https://swapi.dev/api/people/${id}`),
 );
 ```
 
@@ -189,7 +189,7 @@ const startPostgresContainer = () =>
     return waitForContainerToBeReady().then(
       () =>
         // The bug is here 🐛
-        postgresContainerProcess
+        postgresContainerProcess,
     );
   });
 ```
@@ -223,7 +223,7 @@ There are 2 workarounds I found to this problem:
    startPostgresContainer((postgresContainerProcess) =>
      waitForContainerToBeReady()
        .then(() => $`docker exec ...`)
-       .then(() => stopPostgresContainer(postgresContainerProcess))
+       .then(() => stopPostgresContainer(postgresContainerProcess)),
    );
    ```
 
@@ -241,18 +241,18 @@ There are 2 workarounds I found to this problem:
 
        return waitForContainerToBeReady().then(() =>
          // Notice we return an array now
-         [postgresContainerProcess]
+         [postgresContainerProcess],
        );
      });
 
    startPostgresContainer(
      (
        // We unwrap that array in the consuming code
-       [postgresContainerProcess]
+       [postgresContainerProcess],
      ) =>
        $`docker exec ...`.then(() =>
-         stopPostgresContainer(postgresContainerProcess)
-       )
+         stopPostgresContainer(postgresContainerProcess),
+       ),
    );
    ```
 

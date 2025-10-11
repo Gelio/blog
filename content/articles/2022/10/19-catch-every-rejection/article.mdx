@@ -23,7 +23,7 @@ promise.then(
   },
   () => {
     console.log("Error caught");
-  }
+  },
 );
 ```
 
@@ -234,7 +234,7 @@ was successful or not. The code looked like this:
 ```typescript
 const pipelineWithoutDestroyingSource = (
   sourceStream: Readable,
-  transforms: Transform[]
+  transforms: Transform[],
 ) => {
   const newSource = new Duplex();
   sourceStream.pipe(newSource);

@@ -18,7 +18,7 @@ import {
 const allArticlesIndexName = "all-articles.json";
 
 export const createAllArticlesIndex = (
-  articlesWithMetadata: readonly ParsedArticleWithMetadata[]
+  articlesWithMetadata: readonly ParsedArticleWithMetadata[],
 ) =>
   pipe(
     taskEither.rightIO(getIndexFilePath(allArticlesIndexName)),
@@ -30,16 +30,16 @@ export const createAllArticlesIndex = (
             ({
               type: "cannot-create-index-parent-directory",
               error,
-            } as const)
-        )
-      )
+            }) as const,
+        ),
+      ),
     ),
     taskEither.chainW((indexFilePath) =>
       safeWriteIndex(
         indexFilePath,
-        articlesWithMetadata.map(({ metadata }) => metadata)
-      )
-    )
+        articlesWithMetadata.map(({ metadata }) => metadata),
+      ),
+    ),
   );
 
 const allArticlesIndexSchema = z.array(indexedArticleMetadataSchema);
@@ -51,5 +51,5 @@ export type ReadAllArticlesIndexError = ExtractLeftFromEither<
 export const readAllArticlesIndex = pipe(
   taskEither.rightIO(getIndexFilePath(allArticlesIndexName)),
   taskEither.chainW(safeReadIndex),
-  taskEither.chainEitherKW(safeParseSchema(allArticlesIndexSchema))
+  taskEither.chainEitherKW(safeParseSchema(allArticlesIndexSchema)),
 );

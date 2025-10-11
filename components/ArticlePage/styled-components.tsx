@@ -7,7 +7,7 @@ import {
 
 export const StyledArticleSection = styled("section")(
   responsiveContainer,
-  responsiveContainerInlinePadding
+  responsiveContainerInlinePadding,
 );
 
 export const StyledArticleContainer = styled("article")(pageContentMarginTop);

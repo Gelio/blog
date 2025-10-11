@@ -56,7 +56,7 @@ const StyledHeader = styled("header")(
     alignItems: "center",
     marginBlockStart: theme.spacing(1),
     paddingBlock: theme.spacing(1),
-  })
+  }),
 );
 
 const StyledHeaderLink = styled(Link)(
@@ -64,7 +64,7 @@ const StyledHeaderLink = styled(Link)(
   ({ theme }) => ({
     color: theme.color.primary.main,
     fontSize: theme.pxToRem(20),
-  })
+  }),
 );
 
 const StyledBlogTitle = styled(StyledHeaderLink)(({ theme }) => ({

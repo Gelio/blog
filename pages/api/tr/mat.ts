@@ -11,11 +11,11 @@ const proxyDeobfuscatedQueryParamsToMatomo = (request: NextApiRequest) => {
     // SAFETY: the URL will always be defined in Next.js API routes.
     // It is a TS false-positive.
     request.url!,
-    process.env.MATOMO_ORIGIN
+    process.env.MATOMO_ORIGIN,
   );
 
   const encodedMatomoSearchParams = url.searchParams.get(
-    matomoEncodedQueryParamName
+    matomoEncodedQueryParamName,
   );
   if (!encodedMatomoSearchParams) {
     return new Response(
@@ -27,7 +27,7 @@ const proxyDeobfuscatedQueryParamsToMatomo = (request: NextApiRequest) => {
         headers: {
           "content-type": "application/json",
         },
-      }
+      },
     );
   }
 

@@ -21,5 +21,5 @@ const StyledFooterText = styled("footer")(
 
     display: "flex",
     alignItems: "end",
-  })
+  }),
 );

@@ -59,8 +59,8 @@ pipe(
     },
     (result) => {
       // Process the result in some way...
-    }
-  )
+    },
+  ),
 );
 ```
 
@@ -97,7 +97,7 @@ Let's focus on the following piece of code:
 type NumberProcessingError = "cannot divide by zero" | "NaN";
 
 function processNumber(
-  num: number
+  num: number,
 ): either.Either<NumberProcessingError, number> {
   if (Number.isNaN(num)) {
     return either.left("NaN");
@@ -146,10 +146,10 @@ pipe(
     (numbers) => {
       console.log(
         "Processing all numbers succeeded. Here are the results:",
-        numbers
+        numbers,
       );
-    }
-  )
+    },
+  ),
 );
 ```
 
@@ -183,7 +183,7 @@ Let's see how to use it in practice:
 ```typescript
 // NOTE: prepare the Applicative that can combine `Left`s (`NumberProcessingError`s)
 const numberProcessingErrorApplicative = either.getApplicativeValidation(
-  array.getSemigroup<NumberProcessingError>()
+  array.getSemigroup<NumberProcessingError>(),
 );
 
 pipe(
@@ -201,10 +201,10 @@ pipe(
     (numbers) => {
       console.log(
         "Processing all numbers succeeded. Here are the results:",
-        numbers
+        numbers,
       );
-    }
-  )
+    },
+  ),
 );
 ```
 
@@ -265,16 +265,16 @@ Let's imagine we have the following 3 functions:
 import { taskEither } from "fp-ts";
 
 declare function fetchUserById(
-  clientId: unknown
+  clientId: unknown,
 ): taskEither.TaskEither<{ type: "user-not-found-error" }, User>;
 
 declare function fetchSpecialistById(
-  specialistId: unknown
+  specialistId: unknown,
 ): taskEither.TaskEither<{ type: "specialist-not-found" }, Specialist>;
 
 declare function fetchWorkingDay(
   specialistId: unknown,
-  startDateTime: unknown
+  startDateTime: unknown,
 ): taskEither.TaskEither<{ type: "working-day-not-found" }, WorkingDay>;
 
 // Stub types so TypeScript does not complain
@@ -324,8 +324,8 @@ pipe(
   apply.sequenceT(taskEither.ApplyPar)(
     fetchUserById(1),
     fetchSpecialistById(2),
-    fetchWorkingDay(2, "2022-07-02")
-  )
+    fetchWorkingDay(2, "2022-07-02"),
+  ),
 );
 ```
 
@@ -346,7 +346,7 @@ pipe(
           | "specialist-not-found"
           | "working-day-not-found";
       }
-    >
+    >,
   )(fetchUserById(1), fetchSpecialistById(2), fetchWorkingDay(2, "2022-07-02")),
   taskEither.match(
     (error) => {
@@ -354,8 +354,8 @@ pipe(
     },
     ([user, specialist, workingDay]) => {
       // TODO: ...
-    }
-  )
+    },
+  ),
 );
 ```
 
@@ -372,25 +372,25 @@ see how to do that.
  * Necessary to let `getApplicativeValidation` combine errors into an array.
  */
 const singletonError = <E, A>(
-  t: taskEither.TaskEither<E, A>
+  t: taskEither.TaskEither<E, A>,
 ): taskEither.TaskEither<[E], A> =>
   pipe(
     t,
-    taskEither.mapLeft((e) => [e])
+    taskEither.mapLeft((e) => [e]),
   );
 
 /** An improved `taskEither.sequenceArray` */
 const partitionErrors = <
-  T extends nonEmptyArray.NonEmptyArray<either.Either<any, any>>
+  T extends nonEmptyArray.NonEmptyArray<either.Either<any, any>>,
 >(
-  results: T
+  results: T,
 ) => {
   type ExtractLeft<T> = T extends either.Left<infer E> ? E : never;
   // NOTE: the magic happens here - we extract all the error types
   // and tell TypeScript to use that union as the combined error type
-  type WorkflowError = ExtractLeft<typeof results[number]>[number];
+  type WorkflowError = ExtractLeft<(typeof results)[number]>[number];
   const validation = either.getApplicativeValidation(
-    array.getSemigroup<WorkflowError>()
+    array.getSemigroup<WorkflowError>(),
   );
   return apply.sequenceT(validation)(...results);
 };
@@ -401,7 +401,7 @@ pipe(
   apply.sequenceT(task.ApplyPar)(
     singletonError(fetchUserById(1)),
     singletonError(fetchSpecialistById(2)),
-    singletonError(fetchWorkingDay(2, "2022-07-02"))
+    singletonError(fetchWorkingDay(2, "2022-07-02")),
   ),
   task.map(partitionErrors),
   taskEither.match(
@@ -412,8 +412,8 @@ pipe(
     },
     ([user, specialist, workingDay]) => {
       // TODO: ...
-    }
-  )
+    },
+  ),
 );
 ```
 

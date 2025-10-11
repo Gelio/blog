@@ -29,7 +29,7 @@ The basic declaration of this function looked like:
 ```typescript
 declare function execute<RowType extends unknown[] | Record<string, unknown>>(
   query: string,
-  options?: { rowMode?: "object" | "array" }
+  options?: { rowMode?: "object" | "array" },
 ): Promise<RowType[]>;
 ```
 
@@ -65,11 +65,11 @@ Let's use it here.
 ```typescript
 declare function executeWithOverloads<RowType extends unknown[]>(
   query: string,
-  options: { rowMode: "array" }
+  options: { rowMode: "array" },
 ): Promise<RowType[]>;
 declare function executeWithOverloads<RowType extends Record<string, unknown>>(
   query: string,
-  options?: { rowMode?: "object" }
+  options?: { rowMode?: "object" },
 ): Promise<RowType[]>;
 ```
 
@@ -106,7 +106,7 @@ const objectIncorrectRowMode = executeWithOverloads<{ count: number }>("", {
 type cases = [
   Expect<Equal<Awaited<typeof tupleCorrectRowMode>, [number, string][]>>,
   Expect<Equal<Awaited<typeof objectCorrectRowMode>, { count: number }[]>>,
-  Expect<Equal<Awaited<typeof objectOmittedOptions>, { count: number }[]>>
+  Expect<Equal<Awaited<typeof objectOmittedOptions>, { count: number }[]>>,
 ];
 ```
 
@@ -134,7 +134,7 @@ type RowMode<RowType extends PossibleRowType> = RowType extends unknown[]
 
 type ExecuteOptions<
   RowType extends PossibleRowType,
-  ResolvedRowMode = RowMode<RowType>
+  ResolvedRowMode = RowMode<RowType>,
 > = ResolvedRowMode extends "object"
   ? // NOTE: return a tuple of arguments to be able to mark `options` as an optional argument
     [options?: { rowMode: ResolvedRowMode }]
@@ -142,7 +142,7 @@ type ExecuteOptions<
 
 declare function executeWithTypeLogic<
   RowType extends PossibleRowType,
-  Options extends ExecuteOptions<RowType> = ExecuteOptions<RowType>
+  Options extends ExecuteOptions<RowType> = ExecuteOptions<RowType>,
 >(query: string, ...options: Options): Promise<RowType[]>;
 ```
 

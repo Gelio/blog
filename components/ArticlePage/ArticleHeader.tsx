@@ -34,7 +34,7 @@ const StyledArticleHeader = styled("div")(
   responsiveContainerInlinePadding,
   ({ theme }) => ({
     marginBlockEnd: theme.spacing(2),
-  })
+  }),
 );
 
 const StyledArticleTitle = styled("h1")(articleTitleStyle, ({ theme }) => ({

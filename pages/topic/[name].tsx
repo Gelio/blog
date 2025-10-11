@@ -27,7 +27,7 @@ export const getStaticPaths: GetStaticPaths<
     either.getOrElseW((error) => {
       console.log("Cannot read topics index file", error);
       throw new Error("Cannot read topics index file");
-    })
+    }),
   );
 
   return {
@@ -50,12 +50,12 @@ export const getStaticProps: GetStaticProps<
   const topicIndexResult = await pipe(
     readTopicIndex(topicName),
     taskEither.bindW("articlesWithSerializedSummary", ({ articles }) =>
-      pipe(serializeSummaryInIndexedArticles(articles), taskEither.rightTask)
+      pipe(serializeSummaryInIndexedArticles(articles), taskEither.rightTask),
     ),
     taskEither.map(({ description, articlesWithSerializedSummary }) => ({
       description,
       articles: articlesWithSerializedSummary,
-    }))
+    })),
   )();
 
   return {

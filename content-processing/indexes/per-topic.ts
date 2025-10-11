@@ -25,7 +25,7 @@ const topicsIndexFileName = "topics.json";
 type TopicsWithParsedArticlesMap = Map<string, ParsedArticleWithMetadata[]>;
 
 const getTopicsWithParsedArticlesMap = (
-  articlesWithMetadata: readonly ParsedArticleWithMetadata[]
+  articlesWithMetadata: readonly ParsedArticleWithMetadata[],
 ) => {
   const topicsWithArticlesMap: TopicsWithParsedArticlesMap = new Map();
 
@@ -48,16 +48,16 @@ export const createTopicIndexes = flow(
   (topicsWithArticleMap) =>
     pipe(
       createPerTopicIndexes(topicsWithArticleMap),
-      taskEither.apFirstW(createTopicsSummary(topicsWithArticleMap))
+      taskEither.apFirstW(createTopicsSummary(topicsWithArticleMap)),
     ),
-  taskEither.map(() => undefined)
+  taskEither.map(() => undefined),
 );
 
 const getTopicIndexPath = (topicName: string) =>
   getIndexFilePath(path.join(topicsIndexesDirectoryName, `${topicName}.json`));
 
 const createPerTopicIndexes = (
-  topicsWithArticlesMap: TopicsWithParsedArticlesMap
+  topicsWithArticlesMap: TopicsWithParsedArticlesMap,
 ) =>
   pipe(
     taskEither.rightIO(getTopicIndexPath("any")),
@@ -67,7 +67,7 @@ const createPerTopicIndexes = (
         ({
           type: "cannot-create-indexes-parent-directory",
           error,
-        } as const)
+        }) as const,
     ),
     taskEither.chainW(() =>
       pipe(
@@ -85,13 +85,13 @@ const createPerTopicIndexes = (
                         type: "cannot-read-topic-description",
                         topic: topicName,
                         error,
-                      } as const)
-                  )
-                )
+                      }) as const,
+                  ),
+                ),
               ),
               taskEither.apS(
                 "indexFilePath",
-                taskEither.rightIO(getTopicIndexPath(topicName))
+                taskEither.rightIO(getTopicIndexPath(topicName)),
               ),
               taskEither.chainW(({ indexFilePath, description }) =>
                 pipe(
@@ -105,15 +105,15 @@ const createPerTopicIndexes = (
                         type: "cannot-write-topic-index",
                         topic: topicName,
                         error,
-                      } as const)
-                  )
-                )
-              )
-            )
+                      }) as const,
+                  ),
+                ),
+              ),
+            ),
         ),
         (tasks) => {
           type TopicProcessingError = ExtractLeftFromEither<
-            ExtractResultFromTask<typeof tasks[number]>
+            ExtractResultFromTask<(typeof tasks)[number]>
           >;
 
           return pipe(
@@ -122,9 +122,9 @@ const createPerTopicIndexes = (
             array.sequence(
               taskEither.getApplicativeTaskValidation(
                 task.ApplyPar,
-                array.getSemigroup<TopicProcessingError>()
-              )
-            )
+                array.getSemigroup<TopicProcessingError>(),
+              ),
+            ),
           );
         },
         taskEither.bimap(
@@ -132,11 +132,11 @@ const createPerTopicIndexes = (
             ({
               type: "cannot-write-topic-indexes",
               errors,
-            } as const),
-          () => undefined
-        )
-      )
-    )
+            }) as const,
+          () => undefined,
+        ),
+      ),
+    ),
   );
 
 const getTopicDescription = (topicName: string) =>
@@ -148,11 +148,11 @@ const getTopicDescription = (topicName: string) =>
         "content",
         "topics",
         // NOTE: no support for Markdown in topic summaries
-        `${topicName}.txt`
-      )
+        `${topicName}.txt`,
+      ),
     ),
     taskEither.rightIO,
-    taskEither.chainW(safeReadFile)
+    taskEither.chainW(safeReadFile),
   );
 
 const topicIndexSchema = z.object({
@@ -178,10 +178,10 @@ export const readTopicIndex = (topicName: string) =>
               type: "topic-index-parse-error",
               topicName,
               error,
-            } as const)
-        )
-      )
-    )
+            }) as const,
+        ),
+      ),
+    ),
   );
 
 const topicsSummaryIndexSchema = z.array(z.string());
@@ -197,14 +197,14 @@ export const readTopicsSummaryIndex = pipe(
           ({
             type: "topics-summary-index-parse-error",
             error,
-          } as const)
-      )
-    )
-  )
+          }) as const,
+      ),
+    ),
+  ),
 );
 
 const createTopicsSummary = (
-  topicsWithArticlesMap: TopicsWithParsedArticlesMap
+  topicsWithArticlesMap: TopicsWithParsedArticlesMap,
 ) =>
   pipe(
     taskEither.rightIO(getIndexFilePath(topicsIndexFileName)),
@@ -214,21 +214,24 @@ const createTopicsSummary = (
         ({
           type: "cannot-create-topics-summary-parent-directory",
           error,
-        } as const)
+        }) as const,
     ),
     taskEither.chainW((topicsIndexFilePath) =>
       pipe(
         safeWriteIndex(
           topicsIndexFilePath,
-          pipe(Array.from(topicsWithArticlesMap.keys()), array.sort(string.Ord))
+          pipe(
+            Array.from(topicsWithArticlesMap.keys()),
+            array.sort(string.Ord),
+          ),
         ),
         taskEither.mapLeft(
           (error) =>
             ({
               type: "cannot-write-topic-summary-index",
               error,
-            } as const)
-        )
-      )
-    )
+            }) as const,
+        ),
+      ),
+    ),
   );

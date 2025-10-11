@@ -19,7 +19,7 @@ const obfuscateMatomoSearchParams = (searchParams: string): string => {
   const trackerUrl = new URL(trackerPathname, window.location.origin);
   trackerUrl.searchParams.set(
     matomoEncodedQueryParamName,
-    window.btoa(searchParams)
+    window.btoa(searchParams),
   );
   return (
     trackerUrl.search
@@ -32,7 +32,7 @@ const obfuscateMatomoSearchParams = (searchParams: string): string => {
 const siteId = process.env.NEXT_PUBLIC_MATOMO_SITE_ID;
 if (!siteId) {
   throw new Error(
-    "Site ID not specified. Please provide a valid Matomo site ID in NEXT_PUBLIC_MATOMO_SITE_ID environment variable"
+    "Site ID not specified. Please provide a valid Matomo site ID in NEXT_PUBLIC_MATOMO_SITE_ID environment variable",
   );
 }
 
