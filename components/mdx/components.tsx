@@ -1,8 +1,13 @@
 import styled from "@emotion/styled";
-import type { Components as MDXComponents } from "@mdx-js/react/lib";
 import Image from "next/image";
 import Link from "next/link";
-import { createContext, useContext } from "react";
+import {
+  createContext,
+  useContext,
+  type AnchorHTMLAttributes,
+  type HTMLAttributes,
+  type HTMLProps,
+} from "react";
 import {
   ArticleHeading2,
   ArticleHeading3,
@@ -10,9 +15,17 @@ import {
   ParagraphLink,
 } from "../text";
 
-export const MDXLink: MDXComponents["a"] = (props) =>
+// MDX components
+// @see https://nextjs.org/docs/pages/guides/mdx#add-an-mdx-componentstsx-file
+
+export const MDXLink = (props: AnchorHTMLAttributes<HTMLAnchorElement>) =>
   props.href ? (
-    <Link href={props.href} passHref legacyBehavior>
+    <Link
+      href={props.href}
+      passHref
+      // TODO: remove `legacyBehavior` prop
+      legacyBehavior
+    >
       <ParagraphLink {...props} />
     </Link>
   ) : (
@@ -26,7 +39,7 @@ const ResponsiveImage = styled(Image)({
   height: "100%",
 });
 
-export const MDXImage: MDXComponents["img"] = (props) => (
+export const MDXImage = (props: HTMLProps<HTMLImageElement>) => (
   <ResponsiveImage
     {...props}
     // NOTE: required to fix a TS error
@@ -51,7 +64,7 @@ export const BlockQuote = styled("blockquote")(({ theme }) => ({
 
 const InsideCodeBlockContext = createContext(false);
 
-export const Pre: MDXComponents["pre"] = (props) => {
+export const Pre = (props: HTMLAttributes<HTMLPreElement>) => {
   return (
     <InsideCodeBlockContext.Provider value={true}>
       <StyledPre {...props} />
@@ -72,7 +85,7 @@ export const StyledInlineCode = styled("code")(({ theme }) => ({
   wordBreak: "break-word",
 }));
 
-export const InlineCode: MDXComponents["code"] = (props) => {
+export const InlineCode = (props: HTMLAttributes<HTMLElement>) => {
   const insideCodeBlock = useContext(InsideCodeBlockContext);
 
   if (insideCodeBlock) {
