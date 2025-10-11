@@ -17,8 +17,8 @@
     "fmt.check": "prettier --check --ignore-path .gitignore ."
   },
   "dependencies": {
-    "@emotion/react": "^11.10.5",
-    "@emotion/styled": "^11.10.5",
+    "@emotion/react": "^11.14.0",
+    "@emotion/styled": "^11.14.1",
     "@mdx-js/react": "^2.1.5",
     "fp-ts": "^2.13.1",
     "gray-matter": "^4.0.3",
