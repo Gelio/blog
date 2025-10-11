@@ -143,7 +143,7 @@ type WizardStateAtSomeStep<
   /** Whether `StepToLookFor` was previously matched in the `RemainingSteps` array */
   StepPreviouslyMatched extends boolean,
   RemainingSteps,
-  StepToLookFor extends keyof CompleteWizardStepsState
+  StepToLookFor extends keyof CompleteWizardStepsState,
 > =
   // Implementation notes:
   // The type recursively analyzes `RemainingSteps` one by one.
@@ -153,7 +153,7 @@ type WizardStateAtSomeStep<
   // matches) `StepToLookFor`.
   RemainingSteps extends [
     infer CurrentStep extends keyof CompleteWizardStepsState,
-    ...infer RestSteps
+    ...infer RestSteps,
   ]
     ? StepToLookFor extends CurrentStep
       ? WizardStateAtSomeStep<
@@ -164,28 +164,29 @@ type WizardStateAtSomeStep<
           StepToLookFor
         >
       : StepPreviouslyMatched extends true
-      ? WizardStateAtSomeStep<
-          CompleteWizardStepsState,
-          AccumulatedWizardState &
-            Partial<Pick<CompleteWizardStepsState, CurrentStep>>,
-          true,
-          RestSteps,
-          StepToLookFor
-        >
-      : WizardStateAtSomeStep<
-          CompleteWizardStepsState,
-          AccumulatedWizardState & Pick<CompleteWizardStepsState, CurrentStep>,
-          false,
-          RestSteps,
-          StepToLookFor
-        >
+        ? WizardStateAtSomeStep<
+            CompleteWizardStepsState,
+            AccumulatedWizardState &
+              Partial<Pick<CompleteWizardStepsState, CurrentStep>>,
+            true,
+            RestSteps,
+            StepToLookFor
+          >
+        : WizardStateAtSomeStep<
+            CompleteWizardStepsState,
+            AccumulatedWizardState &
+              Pick<CompleteWizardStepsState, CurrentStep>,
+            false,
+            RestSteps,
+            StepToLookFor
+          >
     : StepPreviouslyMatched extends true
-    ? AccumulatedWizardState
-    : // NOTE: this branch is hit when `CurrentStep` does not match any
-      // `OrderedConnectExternalPluginWizardSteps`. This should never happen due
-      // to TS type constraints, but the ternary operators still expect some
-      // expression here.
-      RemainingSteps;
+      ? AccumulatedWizardState
+      : // NOTE: this branch is hit when `CurrentStep` does not match any
+        // `OrderedConnectExternalPluginWizardSteps`. This should never happen due
+        // to TS type constraints, but the ternary operators still expect some
+        // expression here.
+        RemainingSteps;
 ```
 
 Let's now use these types for our wizard:
@@ -217,7 +218,7 @@ type OrderedConnectExternalPluginWizardSteps = OrderedTuple<
 >;
 
 export type ConnectExternalPluginWizardStepsStateAtStep<
-  Step extends ConnectExternalPluginWizardStep
+  Step extends ConnectExternalPluginWizardStep,
 > =
   // NOTE: using `Simplify` resolves the union into an object
   // which makes it easier to read and work with.

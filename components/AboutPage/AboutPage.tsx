@@ -85,7 +85,7 @@ const StyledMainContent = styled("main")(
       // so the paragraphs appear as a single column.
       gridTemplateRows: "min-content 1fr",
     },
-  })
+  }),
 );
 
 const StyledAlwaysLeftColumn = styled("div")({

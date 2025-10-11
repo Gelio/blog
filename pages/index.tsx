@@ -26,13 +26,13 @@ export const getStaticProps: GetStaticProps<
     allArticlesResult.right.length >= maxArticles
   ) {
     throw new Error(
-      `Max number of articles (${maxArticles}) exceeded. There are ${allArticlesResult.right.length} articles. It is time to add pagination`
+      `Max number of articles (${maxArticles}) exceeded. There are ${allArticlesResult.right.length} articles. It is time to add pagination`,
     );
   }
 
   const allArticlesWithSerializedContentResult = await pipe(
     taskEither.fromEither(allArticlesResult),
-    taskEither.chainTaskK(serializeSummaryInIndexedArticles)
+    taskEither.chainTaskK(serializeSummaryInIndexedArticles),
   )();
 
   return {

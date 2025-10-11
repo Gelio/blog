@@ -13,6 +13,6 @@ import { flow, pipe } from "fp-ts/function";
  * @see https://simplernerd.com/next-js-error-serializing-date-returned-from-getserversideprops/
  */
 export const reserializeIfError = <E, A>(
-  result: either.Either<E, A>
+  result: either.Either<E, A>,
 ): either.Either<E, A> =>
   pipe(result, either.mapLeft(flow(JSON.stringify, JSON.parse)));

@@ -64,7 +64,7 @@ function UserProfilePicture() {
     )),
     option.ap(maybeUsername),
     option.ap(profilePictureUrl),
-    option.getOrElse(() => null)
+    option.getOrElse(() => null),
   );
 }
 ```
@@ -98,7 +98,7 @@ to
 const unsafeUsername = useContext(UsernameContext);
 const maybeUsername = useMemo(
   () => option.fromNullable(unsafeUsername),
-  [unsafeUsername]
+  [unsafeUsername],
 );
 ```
 
@@ -122,7 +122,7 @@ useStableEffect(
     // ...
   },
   [maybeUsername],
-  eq.tuple(option.getEq(eq.eqStrict))
+  eq.tuple(option.getEq(eq.eqStrict)),
 );
 ```
 
