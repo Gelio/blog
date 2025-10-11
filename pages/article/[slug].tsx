@@ -2,7 +2,7 @@ import { either, taskEither } from "fp-ts";
 import { serialize } from "next-mdx-remote/serialize";
 import { MDXProvider } from "@mdx-js/react";
 import { pipe } from "fp-ts/function";
-import type { GetStaticPaths, GetStaticProps, PageConfig } from "next";
+import type { GetStaticPaths, GetStaticProps } from "next";
 import type { ParsedUrlQuery } from "querystring";
 import {
   ArticleHeader,
@@ -32,7 +32,7 @@ import rehypeHighlight from "rehype-highlight";
 import rehypeImageSize from "rehype-img-size";
 import "highlight.js/styles/base16/gruvbox-dark-medium.css";
 import { WithWrappedCodeBlock } from "../../components/WithWrappedCodeBlock";
-import { baseMDXComponents } from "../../components/mdx";
+import { baseMDXComponents } from "../../components/mdx/components";
 
 interface SourceWithMetadata {
   mdxSource: MDXRemoteSerializeResult;
@@ -160,11 +160,7 @@ export const getStaticProps: GetStaticProps<
               mdxOptions: {
                 rehypePlugins: [
                   rehypeHighlight,
-                  [
-                    // @ts-expect-error Mismatched types
-                    rehypeImageSize,
-                    { dir: "public" },
-                  ],
+                  [rehypeImageSize, { dir: "public" }],
                 ],
               },
             }),
@@ -172,7 +168,7 @@ export const getStaticProps: GetStaticProps<
         taskEither.map((mdxSource) => {
           // NOTE: delete frontmatter since it cannot be serialized by Next in SSR.
           // Frontmatter is already available via `articleMetadata`
-          delete mdxSource["frontmatter"];
+          // delete mdxSource["frontmatter"];
           return mdxSource;
         }),
       ),
@@ -246,25 +242,3 @@ const stripMarkdownFromString =
           ),
         ),
     );
-
-export const config: PageConfig = {
-  /**
-   * Globs pointing to files that are necessary during Incremental Static
-   * Generation of content resources.
-   *
-   * Globs are reletive to the root of the repository.
-   *
-   * They are needed because otherwise Next will exclude these files from the runtime environment of ISG.
-   *
-   * @see https://nextjs.org/docs/advanced-features/output-file-tracing#caveats
-   */
-  unstable_includeFiles: [
-    // NOTE: the `*.*` is mandatory so that minimatch returns only files (with an
-    // extension) and not directories. Otherwise, Next logs an EISDIR when
-    // processing matches.
-    "content-indexes/**/*.*",
-    "content/**/*.*",
-    // NOTE: static content is inspected by rehype-img-size to determine image dimensions
-    "public/static-content/**/*.*",
-  ],
-};

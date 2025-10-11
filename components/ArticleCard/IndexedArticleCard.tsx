@@ -5,7 +5,7 @@ import { pipe } from "fp-ts/function";
 import { MDXRemote, type MDXRemoteSerializeResult } from "next-mdx-remote";
 import { serialize } from "next-mdx-remote/serialize";
 import type { IndexedArticleMetadata } from "../../content-processing/indexes/schema";
-import { baseMDXComponents } from "../mdx";
+import { baseMDXComponents } from "../mdx/components";
 import { Paragraph } from "../text";
 import { ArticleCard } from "./ArticleCard";
 
