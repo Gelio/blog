@@ -41,6 +41,8 @@ export const blogTheme = {
 type BlogTheme = typeof blogTheme;
 
 declare module "@emotion/react" {
+  // NOTE: this is module augmentation so the theme is merged with the existing Theme interface
+  // eslint-disable-next-line @typescript-eslint/no-empty-object-type
   export interface Theme extends BlogTheme {}
 }
 
