@@ -2,6 +2,9 @@
   "name": "blog",
   "version": "0.1.0",
   "private": true,
+  "engines": {
+    "node": "22.20.0"
+  },
   "scripts": {
     "dev": "next dev",
     "dev:content": "concurrently -n next,content \"next-remote-watch content\" \"chokidar 'content/**' -c 'npm run create-indexes && npm run copy-static-content'\"",
