@@ -1,14 +1,8 @@
-import styled from "@emotion/styled";
 import { either } from "fp-ts";
 import { pipe } from "fp-ts/function";
 import type { ReadAllArticlesIndexError } from "../../content-processing/indexes";
 import { HeadDocumentTitle, HeadMetaDescription } from "../../seo";
 
-import {
-  pageContentMarginTop,
-  responsiveContainer,
-  responsiveContainerInlinePadding,
-} from "../../styles/layout";
 import {
   type IndexedArticleMetadataWithSerializedSummary,
   IndexedArticleCard,
@@ -19,7 +13,7 @@ import {
   ErrorAlertContainer,
 } from "../ErrorAlert";
 import { Layout } from "../Layout";
-import { Paragraph } from "../text";
+import styles from "./HomePage.module.css";
 
 interface HomePageProps {
   allArticlesResult: either.Either<
@@ -36,9 +30,9 @@ export const HomePage = ({ allArticlesResult }: HomePageProps) => {
         A list of the most recent articles published on Greg&apos;s blog.
       </HeadMetaDescription>
 
-      <StyledMainContent>
-        <Paragraph>Hey, I&apos;m Greg, welcome to my blog!</Paragraph>
-      </StyledMainContent>
+      <main className="responsive-container responsive-container-inline-padding page-content">
+        <p>Hey, I&apos;m Greg, welcome to my blog!</p>
+      </main>
 
       {pipe(
         allArticlesResult,
@@ -50,32 +44,17 @@ export const HomePage = ({ allArticlesResult }: HomePageProps) => {
             </ErrorAlertContainer>
           ),
           (articles) => (
-            <StyledArticleCardsContainer>
+            <div
+              className={`responsive-container responsive-container-inline-padding ${styles.cards}`}
+            >
               {articles.map((article) => (
                 <IndexedArticleCard metadata={article} key={article.slug} />
               ))}
               {/* TODO: add pagination */}
-            </StyledArticleCardsContainer>
+            </div>
           ),
         ),
       )}
     </Layout>
   );
 };
-
-const StyledMainContent = styled("main")(
-  responsiveContainer,
-  responsiveContainerInlinePadding,
-  pageContentMarginTop,
-);
-
-const StyledArticleCardsContainer = styled("div")(
-  responsiveContainer,
-  responsiveContainerInlinePadding,
-  ({ theme }) => ({
-    display: "flex",
-    flexDirection: "column",
-    gap: theme.spacing(2),
-    marginBlockStart: theme.spacing(2),
-  }),
-);
