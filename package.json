@@ -8,7 +8,7 @@
     "build": "npm run create-indexes && npm run copy-static-content && npm run create-rss-feed && npm run build:next",
     "build:next": "next build",
     "start": "next start",
-    "lint": "next lint",
+    "lint": "eslint .",
     "check-types": "tsc --noEmit",
     "create-indexes": "tsx ./content-processing/create-indexes.ts",
     "create-rss-feed": "tsx ./content-processing/create-rss-feed.ts",
@@ -35,11 +35,13 @@
     "zod": "^4.1.12"
   },
   "devDependencies": {
+    "@eslint/eslintrc": "^3.3.1",
     "@mdx-js/loader": "^3.1.1",
     "@next/mdx": "^15.5.4",
     "@types/node": "24.7.2",
     "@types/react": "19.2.2",
     "@types/react-dom": "19.2.1",
+    "@typescript-eslint/eslint-plugin": "^8.46.0",
     "chokidar-cli": "^3.0.0",
     "concurrently": "^9.2.1",
     "eslint": "9.37.0",
