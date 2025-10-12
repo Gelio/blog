@@ -1,6 +1,6 @@
-import styled from "@emotion/styled";
 import Link from "next/link";
 import { getTopicPagePath } from "../TopicPage";
+import styles from "./Tags.module.css";
 
 interface TagsProps {
   names: string[];
@@ -19,15 +19,11 @@ export const Tags = ({ names }: TagsProps) => (
 );
 
 const Tag = ({ name }: { name: string }) => (
-  <StyledTagLink href={getTopicPagePath(name)} aria-label={`Topic: ${name}`}>
+  <Link
+    className={styles["tag-link"]}
+    href={getTopicPagePath(name)}
+    aria-label={`Topic: ${name}`}
+  >
     {name}
-  </StyledTagLink>
+  </Link>
 );
-
-const StyledTagLink = styled(Link)(({ theme }) => ({
-  textDecoration: "underline",
-  transition: "color 200ms ease-in-out",
-  ":hover": {
-    color: theme.color.primary.main,
-  },
-}));

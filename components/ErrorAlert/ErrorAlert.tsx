@@ -1,24 +1,19 @@
-import styled from "@emotion/styled";
 import { type ReactNode, useEffect } from "react";
-import {
-  responsiveContainer,
-  responsiveContainerInlinePadding,
-} from "../../styles/layout";
+import styles from "./ErrorAlert.module.css";
 
 export const ErrorAlert = ({ children }: { children: ReactNode }) => {
   return <div>{children}</div>;
 };
 
-export const ErrorAlertContainer = styled("div")(
-  responsiveContainer,
-  responsiveContainerInlinePadding,
-  ({ theme }) => ({
-    backgroundColor: theme.color.error.background,
-    border: `solid 1px ${theme.color.error.border}`,
-    padding: theme.spacing(2),
-    borderRadius: theme.spacing(1),
-  }),
-);
+export const ErrorAlertContainer = ({ children }: { children: ReactNode }) => {
+  return (
+    <div
+      className={`responsive-container responsive-container-inline-padding ${styles.container}`}
+    >
+      {children}
+    </div>
+  );
+};
 
 export const DevOnlyErrorDetails = ({ error }: { error: unknown }) => {
   useEffect(() => {
@@ -31,14 +26,9 @@ export const DevOnlyErrorDetails = ({ error }: { error: unknown }) => {
     return null;
   }
 
-  return <SerializedError>{JSON.stringify(error, null, 2)}</SerializedError>;
+  return (
+    <pre className={styles["serialized-error"]}>
+      {JSON.stringify(error, null, 2)}
+    </pre>
+  );
 };
-
-const SerializedError = styled("pre")(({ theme }) => ({
-  backgroundColor: theme.color.background.light,
-  padding: theme.spacing(3),
-  borderRadius: theme.spacing(1),
-  border: `solid 1px ${theme.color.text.main}`,
-  marginBlockStart: theme.spacing(2),
-  marginBlockEnd: 0,
-}));

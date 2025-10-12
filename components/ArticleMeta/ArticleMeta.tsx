@@ -1,4 +1,4 @@
-import styled from "@emotion/styled";
+import styles from "./ArticleMeta.module.css";
 
 import { Tags } from "../Tags";
 
@@ -13,30 +13,14 @@ export const ArticleMeta = ({
   readingTimeMin,
   tagNames,
 }: ArticleMetaProps) => (
-  <StyledArticleMetaContainer>
-    <StyledArticleMetaItem>
-      {formatDateString(createdDate)}
-    </StyledArticleMetaItem>
-    <StyledArticleMetaItem>
-      {formatReadingTime(readingTimeMin)}
-    </StyledArticleMetaItem>
-    <StyledArticleMetaItem>
+  <div className={styles.container}>
+    <span className={styles.item}>{formatDateString(createdDate)}</span>
+    <span className={styles.item}>{formatReadingTime(readingTimeMin)}</span>
+    <span className={styles.item}>
       <Tags names={tagNames} />
-    </StyledArticleMetaItem>
-  </StyledArticleMetaContainer>
+    </span>
+  </div>
 );
-
-const StyledArticleMetaContainer = styled("div")(({ theme }) => ({
-  display: "flex",
-  columnGap: theme.spacing(4),
-  rowGap: theme.spacing(1),
-  flexWrap: "wrap",
-}));
-
-const StyledArticleMetaItem = styled("span")(({ theme }) => ({
-  color: theme.color.text.desaturated,
-  fontSize: theme.pxToRem(16),
-}));
 
 const formatDateString = (dateString: string) => {
   const date = new Date(dateString);

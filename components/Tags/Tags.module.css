@@ -1,0 +1,8 @@
+.tag-link {
+  transition: color 200ms linear;
+  text-decoration: underline;
+
+  &:hover {
+    color: var(--color-primary-main);
+  }
+}
