@@ -1,11 +1,11 @@
+import "../styles/global.css";
 import type { AppProps } from "next/app";
 import Head from "next/head";
 import { MatomoTrackingScript } from "../lib/matomo";
-import { StylesProvider } from "../styles/provider";
 
 function MyApp({ Component, pageProps }: AppProps) {
   return (
-    <StylesProvider>
+    <>
       <MatomoTrackingScript />
       <Head>
         <link
@@ -18,7 +18,7 @@ function MyApp({ Component, pageProps }: AppProps) {
       </Head>
 
       <Component {...pageProps} />
-    </StylesProvider>
+    </>
   );
 }
 

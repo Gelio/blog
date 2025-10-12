@@ -1,0 +1,38 @@
+.header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-block-start: var(--spacing);
+  padding-block: var(--spacing);
+}
+
+.header-links {
+  display: flex;
+  gap: calc(var(--spacing) * 3);
+  align-items: baseline;
+  flex-wrap: wrap;
+}
+
+.header-link {
+  color: var(--color-primary-main);
+  font-size: calc(20 / 16 * 1rem);
+}
+
+.header-title-link {
+  font-size: calc(24 / 16 * 1rem);
+}
+
+.sublinks {
+  display: flex;
+  gap: calc(var(--spacing) * 2);
+}
+
+.icon-link {
+  text-decoration: none;
+  transition: filter ease-in-out 200ms;
+  --shadowRadius: 1px;
+  filter: drop-shadow(0 0 var(--shadowRadius) var(--color-shadow));
+  &:hover {
+    --shadowRadius: 2px;
+  }
+}
