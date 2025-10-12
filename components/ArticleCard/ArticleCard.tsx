@@ -3,7 +3,6 @@ import type { ComponentProps, ReactNode } from "react";
 
 import { ArticleMeta } from "../ArticleMeta";
 import { getArticlePagePath } from "../ArticlePage/route";
-import { Button } from "../Button";
 import styles from "./ArticleCard.module.css";
 
 interface ArticleCardProps extends ComponentProps<typeof ArticleMeta> {
@@ -35,11 +34,10 @@ export const ArticleCard = ({
 
     <Link
       href={getArticlePagePath(slug)}
-      passHref
-      // TODO: use a normal anchor tag
-      legacyBehavior
+      aria-label={`Read the article "${title}"`}
+      className={styles["read-more-link"]}
     >
-      <Button aria-label={`Read the article "${title}"`}>Read more</Button>
+      Read more
     </Link>
   </article>
 );
