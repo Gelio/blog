@@ -14,6 +14,7 @@ import {
   Paragraph,
   ParagraphLink,
 } from "../text";
+import type { Route } from "next";
 
 // MDX components
 // @see https://nextjs.org/docs/pages/guides/mdx#add-an-mdx-componentstsx-file
@@ -21,7 +22,7 @@ import {
 export const MDXLink = (props: AnchorHTMLAttributes<HTMLAnchorElement>) =>
   props.href ? (
     <Link
-      href={props.href}
+      href={props.href as Route}
       passHref
       // TODO: remove `legacyBehavior` prop
       legacyBehavior
