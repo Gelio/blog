@@ -1,0 +1,13 @@
+.article-card {
+  border-radius: var(--spacing);
+  background-color: var(--color-primary-light);
+  display: flex;
+  flex-direction: column;
+  gap: var(--spacing);
+  padding: calc(2 * var(--spacing));
+  box-shadow: var(--shadow-2) hsl(from var(--color-shadow) h s l / 20%);
+}
+
+.article-title {
+  margin: 0;
+}

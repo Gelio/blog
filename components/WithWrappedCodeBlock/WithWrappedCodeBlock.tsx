@@ -1,7 +1,6 @@
-import styled from "@emotion/styled";
+import type { ReactNode } from "react";
+import styles from "./WithWrappedCodeBlock.module.css";
 
-export const WithWrappedCodeBlock = styled("div")({
-  pre: {
-    whiteSpace: "break-spaces",
-  },
-});
+export const WithWrappedCodeBlock = ({ children }: { children: ReactNode }) => {
+  return <div className={styles["code-block"]}>{children}</div>;
+};

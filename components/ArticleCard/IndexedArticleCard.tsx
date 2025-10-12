@@ -1,4 +1,3 @@
-import styled from "@emotion/styled";
 import { MDXProvider } from "@mdx-js/react";
 import { task } from "fp-ts";
 import { pipe } from "fp-ts/function";
@@ -6,8 +5,9 @@ import { MDXRemote, type MDXRemoteSerializeResult } from "next-mdx-remote";
 import { serialize } from "next-mdx-remote/serialize";
 import type { IndexedArticleMetadata } from "../../content-processing/indexes/schema";
 import { baseMDXComponents } from "../mdx/components";
-import { Paragraph } from "../text";
 import { ArticleCard } from "./ArticleCard";
+import styles from "./IndexedArticleCard.module.css";
+import type { ReactNode } from "react";
 
 export type IndexedArticleMetadataWithSerializedSummary = Omit<
   IndexedArticleMetadata,
@@ -31,7 +31,7 @@ export const IndexedArticleCard = ({ metadata }: IndexedArticleCardProps) => (
       <MDXProvider
         components={{
           ...baseMDXComponents,
-          p: StyledArticleCardSummary,
+          p: ArticleCardSummary,
         }}
       >
         <MDXRemote {...metadata.summary} />
@@ -40,9 +40,9 @@ export const IndexedArticleCard = ({ metadata }: IndexedArticleCardProps) => (
   />
 );
 
-const StyledArticleCardSummary = styled(Paragraph)({
-  margin: 0,
-});
+const ArticleCardSummary = ({ children }: { children: ReactNode }) => (
+  <p className={styles["article-card-summary"]}>{children}</p>
+);
 
 export const serializeSummaryInIndexedArticles = (
   articles: IndexedArticleMetadata[],

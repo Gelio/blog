@@ -1,17 +1,7 @@
-import styled from "@emotion/styled";
 import { either } from "fp-ts";
 import { pipe } from "fp-ts/function";
 import Link from "next/link";
 import type { readTopicsSummaryIndex } from "../../content-processing/indexes/per-topic";
-import {
-  pageContentMarginTop,
-  responsiveContainer,
-  responsiveContainerInlinePadding,
-} from "../../styles/layout";
-import {
-  decorationOnHoverLinkStyle,
-  headingStyle,
-} from "../../styles/typography";
 import {
   DevOnlyErrorDetails,
   ErrorAlert,
@@ -20,6 +10,7 @@ import {
 import { HeadDocumentTitle, HeadMetaDescription } from "../../seo";
 import { Layout } from "../Layout";
 import { getTopicPagePath } from "../TopicPage";
+import styles from "./TopicsPage.module.css";
 
 interface TopicsPageProps {
   topicsResult: Awaited<ReturnType<typeof readTopicsSummaryIndex>>;
@@ -33,9 +24,9 @@ export const TopicsPage = ({ topicsResult }: TopicsPageProps) => {
         A list of topics that I write about on my blog.
       </HeadMetaDescription>
 
-      <StyledMainContent>
-        <StyledMainHeading>Topics I write about</StyledMainHeading>
-      </StyledMainContent>
+      <div className="responsive-container responsive-container-inline-padding page-content">
+        <h1 className="heading">Topics I write about</h1>
+      </div>
 
       {pipe(
         topicsResult,
@@ -47,41 +38,22 @@ export const TopicsPage = ({ topicsResult }: TopicsPageProps) => {
             </ErrorAlertContainer>
           ),
           (topics) => (
-            <TopicsContainer>
+            <main
+              className={`responsive-container responsive-container-inline-padding ${styles.topics}`}
+            >
               {topics.map((topic) => (
-                <TopicLink href={getTopicPagePath(topic)} key={topic}>
+                <Link
+                  className={`decoration-on-hover ${styles["topic-link"]}`}
+                  href={getTopicPagePath(topic)}
+                  key={topic}
+                >
                   {topic}
-                </TopicLink>
+                </Link>
               ))}
-            </TopicsContainer>
+            </main>
           ),
         ),
       )}
     </Layout>
   );
 };
-
-const StyledMainContent = styled("div")(
-  responsiveContainer,
-  responsiveContainerInlinePadding,
-  pageContentMarginTop,
-);
-
-const StyledMainHeading = styled("h1")(headingStyle);
-
-const TopicsContainer = styled("main")(
-  responsiveContainer,
-  responsiveContainerInlinePadding,
-  ({ theme }) => ({
-    marginTop: theme.spacing(2),
-    display: "flex",
-    flexWrap: "wrap",
-    columnGap: theme.spacing(3),
-    rowGap: theme.spacing(2),
-  }),
-);
-
-const TopicLink = styled(Link)(decorationOnHoverLinkStyle, ({ theme }) => ({
-  color: theme.color.primary.main,
-  fontSize: theme.pxToRem(18),
-}));

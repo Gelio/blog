@@ -1,0 +1,12 @@
+.topics {
+  margin-top: calc(var(--spacing) * 2);
+  display: flex;
+  flex-wrap: wrap;
+  column-gap: calc(var(--spacing) * 3);
+  row-gap: calc(var(--spacing) * 2);
+}
+
+.topic-link {
+  color: var(--color-primary-main);
+  font-size: calc(18 / 16 * 1rem);
+}

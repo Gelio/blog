@@ -1,0 +1,10 @@
+.page-title {
+  margin-block-start: calc(3 * var(--spacing));
+  margin-block-end: calc(2 * var(--spacing));
+}
+
+.article-cards {
+  display: flex;
+  flex-direction: column;
+  gap: calc(2 * var(--spacing));
+}
