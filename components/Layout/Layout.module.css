@@ -1,0 +1,12 @@
+.layout-container {
+  min-height: 100vh;
+  display: flex;
+  flex-direction: column;
+}
+
+.main-container {
+  /* NOTE: places the footer at the bottom of the screen even if the content is
+     shorter than 100vh */
+  flex-grow: 1;
+  margin-block-end: calc(20 * var(--spacing));
+}

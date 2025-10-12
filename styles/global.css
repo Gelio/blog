@@ -1,0 +1,88 @@
+html,
+body {
+  padding: 0;
+  margin: 0;
+  font-family:
+    -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Oxygen, Ubuntu,
+    Cantarell, "Fira Sans", "Droid Sans", "Helvetica Neue", sans-serif;
+}
+
+html {
+  font-size: 16px;
+}
+
+a {
+  color: inherit;
+}
+
+* {
+  box-sizing: border-box;
+}
+
+:root {
+  --container-width: 800px;
+  --spacing: 8px;
+
+  --color-primary-main: #1d6891;
+  --color-primary-light: #bfe0f2;
+  --color-text-main: #2b2118;
+  --color-text-desaturated: #777777;
+  --color-text-on-dark-background: #ecf0f1;
+  --color-background-main: #e7f3f6;
+  --color-background-light: #fcfeff;
+  --color-error-background: #ffecec;
+  --color-error-border: rgba(43, 33, 24, 0.3);
+  --color-shadow: hsl(201, 67%, 34%);
+
+  --shadow-2: 2px 4px 4px;
+  --shadow-4: 4px 8px 8px;
+}
+
+body {
+  background-color: var(--color-background-main);
+  color: var(--color-text-main);
+}
+
+.article-title {
+  font-size: calc(28 / 16 * 1rem);
+  font-weight: normal;
+}
+
+.heading {
+  font-size: calc(28 / 16 * 1rem);
+  font-weight: normal;
+}
+
+a.decoration-on-hover {
+  text-decoration: none;
+
+  &:hover {
+    text-decoration: underline;
+  }
+}
+
+.responsive-container {
+  width: 100%;
+  max-width: calc(var(--container-width) + 2 * var(--spacing));
+  margin-inline: auto;
+}
+
+.responsive-container-inline-padding {
+  padding-inline: calc(2 * var(--spacing));
+}
+
+.page-content {
+  margin-block-start: calc(2 * var(--spacing));
+}
+
+p {
+  line-height: 1.5;
+  margin-block-start: 0;
+  margin-block-end: calc(var(--spacing) * 3);
+  font-size: calc(18 / 16 * 1rem);
+}
+
+p a {
+  text-decoration: underline;
+  color: var(--color-primary-main);
+}

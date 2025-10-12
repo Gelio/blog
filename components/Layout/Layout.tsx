@@ -1,25 +1,12 @@
-import styled from "@emotion/styled";
 import type { PropsWithChildren } from "react";
+import styles from "./Layout.module.css";
 import { Footer } from "./Footer";
 import { Header } from "./Header";
 
 export const Layout = ({ children }: PropsWithChildren<unknown>) => (
-  <LayoutContainer>
+  <div className={styles["layout-container"]}>
     <Header />
-    <MainContainer>{children}</MainContainer>
+    <main className={styles["main-container"]}>{children}</main>
     <Footer />
-  </LayoutContainer>
+  </div>
 );
-
-const LayoutContainer = styled("div")({
-  minHeight: "100vh",
-  display: "flex",
-  flexDirection: "column",
-});
-
-// NOTE: places the footer at the bottom of the screen even if the content is
-// shorter than 100vh
-const MainContainer = styled("main")(({ theme }) => ({
-  flexGrow: 1,
-  marginBlockEnd: theme.spacing(20),
-}));
