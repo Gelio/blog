@@ -1,0 +1,9 @@
+.header {
+  margin-block-end: calc(var(--spacing) * 2);
+}
+
+.article-title {
+  /* NOTE: reset the default margin-block-start */
+  margin-block-start: 0;
+  margin-block-end: var(--spacing);
+}
