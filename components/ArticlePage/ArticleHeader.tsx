@@ -1,12 +1,7 @@
-import styled from "@emotion/styled";
 import type { ComponentProps } from "react";
 
-import {
-  responsiveContainer,
-  responsiveContainerInlinePadding,
-} from "../../styles/layout";
-import { articleTitleStyle } from "../../styles/typography";
 import { ArticleMeta } from "../ArticleMeta";
+import styles from "./ArticleHeader.module.css";
 
 interface ArticleHeaderProps extends ComponentProps<typeof ArticleMeta> {
   title: string;
@@ -18,27 +13,15 @@ export const ArticleHeader = ({
   readingTimeMin: readingDuration,
   tagNames,
 }: ArticleHeaderProps) => (
-  <StyledArticleHeader>
-    <StyledArticleTitle>{title}</StyledArticleTitle>
+  <div
+    className={`responsive-container responsive-container-inline-padding ${styles.header}`}
+  >
+    <h1 className={`article-title ${styles["article-title"]}`}>{title}</h1>
 
     <ArticleMeta
       createdDate={createdDate}
       readingTimeMin={readingDuration}
       tagNames={tagNames}
     />
-  </StyledArticleHeader>
+  </div>
 );
-
-const StyledArticleHeader = styled("div")(
-  responsiveContainer,
-  responsiveContainerInlinePadding,
-  ({ theme }) => ({
-    marginBlockEnd: theme.spacing(2),
-  }),
-);
-
-const StyledArticleTitle = styled("h1")(articleTitleStyle, ({ theme }) => ({
-  // NOTE: reset the default margin-block-start
-  marginBlockStart: 0,
-  marginBlockEnd: theme.spacing(1),
-}));

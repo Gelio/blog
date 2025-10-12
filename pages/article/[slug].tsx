@@ -4,11 +4,7 @@ import { MDXProvider } from "@mdx-js/react";
 import { pipe } from "fp-ts/function";
 import type { GetStaticPaths, GetStaticProps } from "next";
 import type { ParsedUrlQuery } from "querystring";
-import {
-  ArticleHeader,
-  StyledArticleContainer,
-  StyledArticleSection,
-} from "../../components/ArticlePage";
+import { ArticleHeader } from "../../components/ArticlePage";
 import { Layout } from "../../components/Layout";
 import {
   readSlugReverseMapping,
@@ -60,7 +56,7 @@ interface ArticlePageProps {
 const ArticlePage = ({ sourceWithMetadataResult }: ArticlePageProps) => {
   return (
     <Layout>
-      <StyledArticleContainer>
+      <article className="page-content">
         {pipe(
           sourceWithMetadataResult,
           either.match(
@@ -83,7 +79,7 @@ const ArticlePage = ({ sourceWithMetadataResult }: ArticlePageProps) => {
                   tagNames={articleMetadata.tags}
                 />
 
-                <StyledArticleSection>
+                <section className="responsive-container responsive-container-inline-padding">
                   <MDXProvider
                     components={{
                       ...baseMDXComponents,
@@ -92,12 +88,12 @@ const ArticlePage = ({ sourceWithMetadataResult }: ArticlePageProps) => {
                   >
                     <MDXRemote {...mdxSource} />
                   </MDXProvider>
-                </StyledArticleSection>
+                </section>
               </>
             ),
           ),
         )}
-      </StyledArticleContainer>
+      </article>
     </Layout>
   );
 };
