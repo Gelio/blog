@@ -9,7 +9,7 @@
     "build:next": "next build",
     "start": "next start",
     "lint": "eslint .",
-    "check-types": "tsc --noEmit",
+    "tsc": "tsc",
     "create-indexes": "tsx ./content-processing/create-indexes.ts",
     "create-rss-feed": "tsx ./content-processing/create-rss-feed.ts",
     "copy-static-content": "rsync -avh --delete --exclude='**/*.mdx' content/articles/ public/static-content/",
